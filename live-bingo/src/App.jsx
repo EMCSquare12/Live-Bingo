@@ -1,0 +1,34 @@
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import Lobby from "./pages/Lobby/Lobby";
+import Game from "./pages/Game/Game";
+import JoinRoom from "./pages/Lobby/JoinRoom";
+import HostRoom from "./pages/Lobby/HostRoom";
+function App() {
+  const router = createBrowserRouter([
+    {
+      path: "/",
+      element: <Lobby />,
+      children: [
+        {
+          index: true,
+          element: <JoinRoom />,
+        },
+        {
+          path: "host",
+          element: <HostRoom />,
+        },
+      ],
+    },
+    {
+      path: "/game",
+      element: <Game />,
+    },
+  ]);
+  return (
+    <>
+      <RouterProvider router={router} />
+    </>
+  );
+}
+
+export default App;
