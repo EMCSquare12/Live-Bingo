@@ -1,9 +1,11 @@
 import Header from "../../components/Header";
+import { Outlet } from "react-router-dom";
 function Game() {
   return (
     <>
-      <div>
+      <div className="flex flex-col w-screen h-screen">
         <Header />
+        <Outlet />
       </div>
     </>
   );

@@ -3,6 +3,8 @@ import Lobby from "./pages/Lobby/Lobby";
 import Game from "./pages/Game/Game";
 import JoinRoom from "./pages/Lobby/JoinRoom";
 import HostRoom from "./pages/Lobby/HostRoom";
+import Player from "./pages/Game/Player";
+import Host from "./pages/Game/Host";
 function App() {
   const router = createBrowserRouter([
     {
@@ -22,6 +24,16 @@ function App() {
     {
       path: "/game",
       element: <Game />,
+      children: [
+        {
+          index: true,
+          element: <Host />,
+        },
+        {
+          path: "player",
+          element: <Player />,
+        },
+      ],
     },
   ]);
   return (
