@@ -10,8 +10,11 @@ function BingoCard({ letterNumber, handleRefresh }) {
   ];
   return (
     <div className="relative flex flex-col gap-4 p-4 overflow-hidden bg-gray-600 rounded-lg shadow-lg w-fit h-fit">
-      <div className="absolute top-0 right-0 flex flex-row overflow-hidden bg-white rounded-md h-fit w-fit bg-opacity-20">
-        <button onClick={handleRefresh} className="flex items-center justify-center h-6 p-1 px-2 text-md text-gray-50 hover:bg-gray-400">
+      <div className="absolute top-0 right-0 flex flex-row overflow-hidden bg-white rounded-bl-lg h-fit w-fit bg-opacity-20">
+        <button
+          onClick={handleRefresh}
+          className="flex items-center justify-center h-6 p-1 px-2 text-md text-gray-50 hover:bg-gray-400"
+        >
           <FiRefreshCw />
         </button>
         <button className="flex items-center justify-center h-6 p-1 px-2 font-medium text-md text-gray-50 hover:bg-gray-400">

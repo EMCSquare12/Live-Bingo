@@ -14,6 +14,7 @@ function Logo() {
       <div className="flex gap-2 px-2 border-2 border-white rounded-md">
         {Array.from({ length: 5 }, (_, index) => (
           <div
+            key={index}
             className={`flex items-center justify-center text-lg font-bold md:text-xl ${charStyle.styles[index]}`}
           >
             {charStyle.char[index]}

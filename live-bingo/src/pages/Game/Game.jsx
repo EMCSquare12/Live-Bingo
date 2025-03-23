@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 function Game() {
   return (
     <>
-      <div className="flex flex-col w-screen h-screen">
+      <div className="flex flex-col w-screen min-h-screen">
         <Header />
         <Outlet />
       </div>

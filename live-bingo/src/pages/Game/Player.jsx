@@ -3,6 +3,7 @@ import BingoCard from "../../components/BingoCard";
 
 function Player() {
   const [letterNumber, setLetterNumber] = useState({});
+  const [isRefreshed, setIsRefreshed] = useState(false);
 
   const generateUniqueNumbers = (min, max, count) => {
     const uniqueNumbers = new Set();
@@ -24,14 +25,18 @@ function Player() {
     };
 
     setLetterNumber(newLN);
-  }, []);
+  }, [isRefreshed]);
 
   console.log(letterNumber);
+  console.log("isRefreshed: ", isRefreshed);
 
   return (
     <>
-      <div className="flex flex-row items-center justify-center w-full h-full bg-gray-900">
-        <BingoCard letterNumber={letterNumber} />
+      <div className="flex flex-row items-center justify-center w-full h-full min-h-screen bg-gray-900">
+        <BingoCard
+          letterNumber={letterNumber}
+          handleRefresh={() => setIsRefreshed(!isRefreshed)}
+        />
       </div>
     </>
   );
