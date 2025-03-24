@@ -12,9 +12,9 @@ function Host() {
     ],
   };
   const [numbers, setNumbers] = useState([...Array(75)].map((_, i) => i + 1));
-  const [generatedNumber, setGeneratedNumber] = useState();
+  const [generatedNumber, setGeneratedNumber] = useState("X");
 
-  const handleShake = () => {
+  const handleRollNumber = () => {
     if (numbers.length === 0) return;
     const randomNumber = numbers[Math.floor(Math.random() * numbers.length)];
     const removedNumber = numbers.filter((num) => num !== randomNumber);
@@ -25,8 +25,8 @@ function Host() {
   console.log(generatedNumber, numbers);
   return (
     <>
-      <div className="grid  w-full h-auto grid-cols-[1fr_1.5fr_1fr] grid-rows-1 gap-10 p-10 bg-gray-900 items-start">
-        <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 mt-20 items-center justify-between p-10 shadow-lg">
+      <div className="grid  w-full h-auto grid-cols-[1fr_1.5fr_1fr] grid-rows-1 gap-10 py-20 p-10 bg-gray-900 items-start">
+        <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 items-center justify-between p-10 shadow-lg">
           <div className="flex flex-col items-center justify-center gap-2">
             {generatedNumber && (
               <div
@@ -42,14 +42,14 @@ function Host() {
             </div>
           </div>
           <button
-            onClick={handleShake}
+            onClick={handleRollNumber}
             className="flex items-center justify-center px-6 py-2 mt-6 font-medium bg-blue-600 rounded-md text-gray-50 inter hover:bg-blue-700"
           >
-            Shake
+            Roll Number
           </button>
         </div>
 
-        <div className="flex flex-col items-start justify-start w-full p-10 mt-20 bg-gray-600 shadow-lg h-fit rounded-xl">
+        <div className="flex flex-col items-start justify-start w-full p-10 bg-gray-600 shadow-lg h-fit rounded-xl">
           {Array.from({ length: 5 }, (_, charIndex) => (
             <div
               key={charIndex}
@@ -64,7 +64,11 @@ function Host() {
                 {Array.from({ length: 15 }, (_, numIndex) => (
                   <div
                     key={numIndex}
-                    className="flex items-center justify-center text-sm font-medium text-center bg-gray-500 rounded-md w-7 h-7 text-gray-50 "
+                    className={`flex items-center justify-center text-sm font-medium text-center ${
+                      numbers.includes(numIndex + charIndex * 15 + 1)
+                        ? "bg-gray-500 text-gray-50"
+                        : `${charStyle.styles[charIndex]} text-gray-50`
+                    } rounded-md w-7 h-7 `}
                   >
                     {numIndex + charIndex * 15 + 1}
                   </div>
@@ -73,7 +77,7 @@ function Host() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 mt-20 shadow-lg"></div>
+        <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg"></div>
       </div>
     </>
   );
