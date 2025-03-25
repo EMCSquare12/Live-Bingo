@@ -32,18 +32,18 @@ function Host() {
               <div
                 className={`flex items-center justify-center text-4xl font-bold ${
                   charStyle.styles[Math.floor(generatedNumber / 15)]
-                } rounded-lg text-gray-50 w-14 h-14 inter`}
+                } rounded-lg text-gray-50 w-14 h-14 font-inter`}
               >
                 {charStyle.char[Math.floor(generatedNumber / 15)]}
               </div>
             )}
-            <div className="w-full font-medium text-center text-9xl inter text-gray-50">
+            <div className="w-full font-medium text-center text-9xl font-inter text-gray-50">
               {generatedNumber}
             </div>
           </div>
           <button
             onClick={handleRollNumber}
-            className="flex items-center justify-center px-6 py-2 mt-6 font-medium bg-blue-600 rounded-md text-gray-50 inter hover:bg-blue-700"
+            className="flex items-center justify-center px-6 py-2 mt-6 font-medium bg-blue-600 rounded-md text-gray-50 font-inter hover:bg-blue-700"
           >
             Roll Number
           </button>
@@ -56,7 +56,7 @@ function Host() {
               className="flex flex-row items-start justify-center w-full gap-5 h-fit"
             >
               <div
-                className={`flex items-center justify-center w-10 h-10 mt-2 text-lg font-bold ${charStyle.styles[charIndex]} rounded-md text-gray-50 inter`}
+                className={`flex items-center justify-center w-10 h-10 mt-2 text-lg font-bold ${charStyle.styles[charIndex]} rounded-md text-gray-50 font-inter`}
               >
                 {charStyle.char[charIndex]}
               </div>

@@ -40,7 +40,7 @@ function BingoCard({ letterNumber, handleRefresh }) {
             {letterNumber[char].map((num, rowIndex) => (
               <div
                 key={rowIndex}
-                className="flex items-center justify-center w-12 h-12 text-xl font-bold text-gray-600 rounded-md inter bg-gray-50"
+                className="flex items-center justify-center w-12 h-12 text-xl font-bold text-gray-600 rounded-md font-inter bg-gray-50"
               >
                 {rowIndex === 2 && colIndex === 2 ? <GiRoundStar /> : num}
               </div>

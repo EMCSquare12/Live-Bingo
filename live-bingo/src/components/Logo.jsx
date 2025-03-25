@@ -21,7 +21,7 @@ function Logo() {
           </div>
         ))}
       </div>
-      <div className="text-lg font-medium text-white inter md:text-xl">
+      <div className="text-lg font-medium text-white font-inter md:text-xl">
         Live
       </div>
     </div>

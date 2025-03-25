@@ -9,9 +9,7 @@ function Lobby() {
           <div className="absolute top-0 left-0 flex justify-between w-full px-2 py-2 bg-gray-800 h-fit md:px-8">
             <Logo />
           </div>
-          <section className="right-0 flex flex-col h-auto p-4 px-12 mt-40 mb-20 w-fit">
-            Section1
-          </section>
+          {/* <section className="right-0 flex flex-col h-auto p-4 px-12 mt-40 mb-20 w-fit"></section> */}
         </div>
         <Outlet />
       </div>

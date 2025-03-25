@@ -39,13 +39,13 @@ function JoinRoom() {
   return (
     <div className="flex justify-between w-full h-full bg-gray-900 over">
       <section className="flex flex-col gap-4 px-16 mt-40 mb-16 w-fit h-fit">
-        <h1 className="text-lg font-medium md:text-2xl inter text-gray-50">
+        <h1 className="text-lg font-medium md:text-2xl font-inter text-gray-50">
           Join a game
         </h1>
         <div className="flex flex-col gap-2 pb-6">
           <label
             htmlFor="roomId"
-            className="font-normal text-gray-50 text-md w-fit inter"
+            className="font-normal text-gray-50 text-md w-fit font-inter"
           >
             Room Code
           </label>
@@ -55,13 +55,13 @@ function JoinRoom() {
             value={inputs.roomId}
             id="roomId"
             type="text"
-            className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none inter focus:ring-2 focus:ring-blue-500 w-72"
+            className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter focus:ring-2 focus:ring-blue-500 w-72"
           />
         </div>
         <div className="flex flex-col gap-2 pb-6">
           <label
             htmlFor="name"
-            className="font-normal text-gray-50 text-md w-fit inter"
+            className="font-normal text-gray-50 text-md w-fit font-inter"
           >
             Your Name
           </label>
@@ -71,11 +71,11 @@ function JoinRoom() {
             value={inputs.name}
             id="name"
             type="text"
-            className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none inter focus:ring-2 focus:ring-blue-500 w-72"
+            className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter focus:ring-2 focus:ring-blue-500 w-72"
           />
         </div>
         {isEmpty && (
-          <div className="flex justify-center w-full -mt-6 text-sm text-red-500 inter">
+          <div className="flex justify-center w-full -mt-6 text-sm text-red-500 font-inter">
             Please enter room code
           </div>
         )}
@@ -85,7 +85,7 @@ function JoinRoom() {
         >
           Join
         </button>
-        <div className="flex items-center justify-center w-full gap-1 font-normal text-gray-400 inter text-md">
+        <div className="flex items-center justify-center w-full gap-1 font-normal text-gray-400 font-inter text-md">
           Hosting a game?{" "}
           <Link className="text-blue-400" to={"/host"}>
             Create room
