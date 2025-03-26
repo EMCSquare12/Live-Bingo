@@ -5,6 +5,8 @@ import JoinRoom from "./pages/Lobby/JoinRoom";
 import HostRoom from "./pages/Lobby/HostRoom";
 import Player from "./pages/Game/Player";
 import Host from "./pages/Game/Host";
+import ModalProvider from "./context/ModalProvider";
+import GameProvider from "./context/GameProvider";
 function App() {
   const router = createBrowserRouter([
     {
@@ -38,7 +40,11 @@ function App() {
   ]);
   return (
     <>
-      <RouterProvider router={router} />
+      <ModalProvider>
+        <GameProvider>
+          <RouterProvider router={router} />
+        </GameProvider>
+      </ModalProvider>
     </>
   );
 }

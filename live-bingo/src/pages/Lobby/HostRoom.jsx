@@ -1,9 +1,12 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import { Link } from "react-router-dom";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
+import ModalContext from "../../context/ModalContext";
 
 function HostRoom() {
+  const { setIsOpenModal } = useContext(ModalContext);
+
   const [inputs, setInputs] = useState({
     name: "",
     cardNumber: 1,
@@ -152,6 +155,7 @@ function HostRoom() {
               name="cardPattern"
               value="custom"
               className="w-5 h-5 rounded-md outline-none"
+              onClick={() => setIsOpenModal(true)}
             />
             <label
               htmlFor="custom"
