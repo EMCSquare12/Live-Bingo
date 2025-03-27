@@ -1,7 +1,9 @@
 import { createContext } from "react";
 
 const value = {
-  isOpen: false,
+  isOpenModal: false,
+  patternName: "",
+  patternArray: [],
 };
 
 const ModalContext = createContext(value);

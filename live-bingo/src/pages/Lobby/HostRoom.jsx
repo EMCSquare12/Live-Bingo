@@ -5,7 +5,8 @@ import { IoIosArrowUp } from "react-icons/io";
 import ModalContext from "../../context/ModalContext";
 
 function HostRoom() {
-  const { setIsOpenModal } = useContext(ModalContext);
+  const { setIsOpenModal, patternName, setPatternName } =
+    useContext(ModalContext);
 
   const [inputs, setInputs] = useState({
     name: "",
@@ -150,18 +151,20 @@ function HostRoom() {
           </div>
           <div className="flex flex-row items-center justify-center gap-2 mt-2 w-fit">
             <input
-              id="custom"
+              id="customize"
               type="radio"
               name="cardPattern"
-              value="custom"
+              value="customize"
               className="w-5 h-5 rounded-md outline-none"
-              onClick={() => setIsOpenModal(true)}
+              onClick={() => {
+                setIsOpenModal(true), setPatternName("");
+              }}
             />
             <label
-              htmlFor="custom"
+              htmlFor="customize"
               className="text-sm font-normal cursor-pointer text-gray-50 w-fit font-inter"
             >
-              Customize
+              {patternName}
             </label>
           </div>
         </div>

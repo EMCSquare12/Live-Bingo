@@ -1,30 +1,46 @@
-import { useContext, useRef, useEffect } from "react";
+import { useContext, useRef, useEffect, useState } from "react";
 import ModalContext from "../../context/ModalContext";
 
 const WinningPatternModal = () => {
-  const { setIsOpenModal } = useContext(ModalContext);
+  const {
+    setIsOpenModal,
+    setPatternName,
+    patternName,
+    setPatternArray,
+    patternArray,
+  } = useContext(ModalContext);
   const patternRef = useRef(null);
+  const mouseRef = useRef(null);
+  const [isMouseEnter, setIsMouseEnter] = useState(false);
+
+  const handlePattern = (index) => {
+    if (patternArray.includes(index)) {
+      const filteredIndex = patternArray.filter((item) => item !== index);
+      setPatternArray(filteredIndex);
+    } else {
+      setPatternArray((prev) => [...prev, index]);
+    }
+  };
+
+  const handleMousePattern = (index) => {
+    setIsMouseEnter(true);
+    handlePattern(index);
+  };
 
   const handleClickOutside = (event) => {
     if (patternRef.current && !patternRef.current.contains(event.target)) {
       setIsOpenModal(false);
+      setPatternName("Customize");
     }
   };
   useEffect(() => {
-    const handleClick = () => setIsOpenModal(false);
     document.addEventListener("mousedown", handleClickOutside);
-
-    if (patternRef.current) {
-      patternRef.current.addEventListener("click", handleClick);
-    }
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      if (patternRef.current) {
-        patternRef.current.removeEventListener("click", handleClick);
-      }
     };
   }, []);
+
   return (
     <div className="fixed top-0 left-0 z-10 flex items-center justify-center w-screen h-screen bg-opacity-25 bg-gray-50">
       <div
@@ -39,6 +55,8 @@ const WinningPatternModal = () => {
             Pattern Name:
           </label>
           <input
+            value={patternName}
+            onChange={(e) => setPatternName(e.target.value)}
             id="patternName"
             type="text"
             className="w-full h-10 px-2 py-1 text-gray-600 bg-gray-200 rounded-md outline-gray-600 text-md font-inter"
@@ -47,8 +65,13 @@ const WinningPatternModal = () => {
         <div className="grid grid-cols-5 grid-rows-5 gap-2 p-4 bg-gray-200 rounded-md w-fit">
           {Array.from({ length: 25 }, (_, index) => (
             <button
+              ref={mouseRef}
+              onMouseEnter={() => handleMousePattern(index)}
+              onClick={() => handlePattern(index)}
               key={index}
-              className="w-10 h-10 border-2 border-gray-600 rounded-md"
+              className={`w-10 h-10 border-2 border-gray-600 rounded-md ${
+                patternArray.includes(index) ? "bg-gray-600" : "bg-gray-50"
+              }`}
             ></button>
           ))}
         </div>
@@ -57,7 +80,9 @@ const WinningPatternModal = () => {
             Confirm
           </button>
           <button
-            onClick={() => setIsOpenModal(false)}
+            onClick={() => {
+              setIsOpenModal(false), setPatternName("Customize");
+            }}
             className="flex items-center justify-center p-1 px-3 font-medium bg-gray-500 rounded-md hover:bg-gray-600 text-gray-50 font-inter text-md"
           >
             Cancel
