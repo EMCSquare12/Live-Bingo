@@ -1,8 +1,9 @@
 import { createContext } from "react";
 
 const value = {
-  name: "",
-  roomCode: "",
+  isOpenModal: false,
+  pattern: {},
+  inputs: {},
 };
 
 const GameContext = createContext(value);

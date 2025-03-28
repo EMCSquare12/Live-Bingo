@@ -2,18 +2,19 @@ import { useState, useEffect, useRef, useContext } from "react";
 import { Link } from "react-router-dom";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
-import ModalContext from "../../context/ModalContext";
+import GameContext from "../../context/GameContext";
 
 function HostRoom() {
-  const { setIsOpenModal, patternName, setPatternName } =
-    useContext(ModalContext);
+  const { setIsOpenModal, pattern, setPattern, inputs, setInputs } =
+    useContext(GameContext);
 
-  const [inputs, setInputs] = useState({
-    name: "",
-    cardNumber: 1,
-  });
+  // const [inputs, setInputs] = useState({
+  //   name: "",
+  //   cardNumber: 1,
+  // });
   const [isEmpty, setIsEmpty] = useState(false);
   const [isClickList, setIsClickList] = useState(false);
+  const [label, setLabel] = useState("");
   const nameRef = useRef(null);
   const listRef = useRef(null);
 
@@ -37,6 +38,31 @@ function HostRoom() {
       }
     };
   }, []);
+
+  const handleCardNumber = (index) => {
+    setIsClickList(false);
+    setInputs((prev) => ({
+      ...prev,
+      number: index + 1,
+    }));
+  };
+
+  const handleBlackout = () => {
+    const newArr = [...Array(25)].map((_, index) => index);
+    setPattern((prev) => ({ ...prev, array: newArr }));
+  };
+
+  const handleCustomize = (label) => {
+    setLabel(label);
+    setIsOpenModal(true);
+    setPattern((prev) => ({
+      ...prev,
+      name: "",
+      array:
+        prev.array.length === 25 && label === "customize" ? [] : prev.array,
+    }));
+    console.log(pattern.array);
+  };
 
   const handleOnchange = (key, value) => {
     setInputs((prev) => ({
@@ -84,7 +110,7 @@ function HostRoom() {
             <input
               onClick={() => setIsClickList(!isClickList)}
               onChange={(e) => handleOnchange("cardNumber", e.target.value)}
-              value={inputs.cardNumber}
+              value={inputs.number}
               readOnly
               id="cardNumber"
               type="text"
@@ -109,13 +135,7 @@ function HostRoom() {
               >
                 {Array.from({ length: 10 }, (_, index) => (
                   <li
-                    onClick={() => {
-                      setInputs((prev) => ({
-                        ...prev,
-                        cardNumber: index + 1,
-                      }));
-                      setIsClickList(false);
-                    }}
+                    onClick={() => handleCardNumber(index)}
                     key={index}
                     className={`flex items-center justify-center h-8 text-gray-700 ${
                       inputs.cardNumber === index + 1
@@ -136,6 +156,7 @@ function HostRoom() {
           </label>
           <div className="flex flex-row items-center justify-center gap-2 w-fit">
             <input
+              onClick={handleBlackout}
               id="blackout"
               type="radio"
               value="blackout"
@@ -156,15 +177,13 @@ function HostRoom() {
               name="cardPattern"
               value="customize"
               className="w-5 h-5 rounded-md outline-none"
-              onClick={() => {
-                setIsOpenModal(true), setPatternName("");
-              }}
+              onClick={() => handleCustomize("customize")}
             />
             <label
               htmlFor="customize"
               className="text-sm font-normal cursor-pointer text-gray-50 w-fit font-inter"
             >
-              {patternName}
+              {pattern.name}
             </label>
           </div>
         </div>

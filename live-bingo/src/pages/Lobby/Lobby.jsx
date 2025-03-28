@@ -2,10 +2,10 @@ import Logo from "../../components/Logo";
 import { Outlet } from "react-router-dom";
 import WinningPatternModal from "../../components/modal/WinningPatternModal";
 import { useContext } from "react";
-import ModalContext from "../../context/ModalContext";
+import GameContext from "../../context/GameContext";
 
 function Lobby() {
-  const { isOpenModal } = useContext(ModalContext);
+  const { isOpenModal } = useContext(GameContext);
   return (
     <>
       <div className="grid w-full min-h-screen h-full grid-cols-[40%_60%] bg-gray-50 relative">
