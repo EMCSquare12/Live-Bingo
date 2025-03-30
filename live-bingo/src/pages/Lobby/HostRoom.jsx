@@ -1,22 +1,32 @@
 import { useState, useEffect, useRef, useContext } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 import GameContext from "../../context/GameContext";
+import { io } from "socket.io-client";
 
 function HostRoom() {
-  const { setIsOpenModal, pattern, setPattern, inputs, setInputs } =
+  const { setIsOpenModal, pattern, setPattern, inputs, setInputs, roomCode } =
     useContext(GameContext);
 
-  // const [inputs, setInputs] = useState({
-  //   name: "",
-  //   cardNumber: 1,
-  // });
-  const [isEmpty, setIsEmpty] = useState(false);
   const [isClickList, setIsClickList] = useState(false);
+  const [isEmpty, setIsEmpty] = useState(false);
   const [label, setLabel] = useState("");
   const nameRef = useRef(null);
   const listRef = useRef(null);
+  const navigate = useNavigate();
+  const socket = io("http://localhost:3001");
+
+  const hostGame = async () => {
+    if (!inputs.hostName) {
+      setIsEmpty(true);
+      return;
+    }
+
+    socket.emit("create_game", inputs.hostName);
+
+    navigate(`/${roomCode}`);
+  };
 
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
@@ -64,21 +74,17 @@ function HostRoom() {
     console.log(pattern.array);
   };
 
-  const handleOnchange = (key, value) => {
+  const handleOnchange = (value) => {
     setInputs((prev) => ({
       ...prev,
-      [key]: value,
+      hostName: value,
     }));
+    localStorage.setItem("hostName", value);
   };
 
-  const handleJoin = () => {
-    if (!inputs.name) {
-      setIsEmpty(true);
-    }
-  };
   return (
-    <div className="flex justify-between w-full h-full bg-gray-900 over">
-      <section className="flex flex-col gap-4 px-16 mt-40 mb-16 w-fit h-fit">
+    <div className="flex justify-start w-full h-full bg-gray-900 over">
+      <section className="flex flex-col gap-4 px-16 mt-32 mb-16 w-fit h-fit">
         <h1 className="text-lg font-medium md:text-2xl font-inter text-gray-50">
           Host a game
         </h1>
@@ -92,8 +98,8 @@ function HostRoom() {
           </label>
           <input
             ref={nameRef}
-            onChange={(e) => handleOnchange("name", e.target.value)}
-            value={inputs.name}
+            onChange={(e) => handleOnchange(e.target.value)}
+            value={inputs.hostName}
             id="name"
             type="text"
             className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter focus:ring-2 focus:ring-blue-500 w-72"
@@ -109,7 +115,6 @@ function HostRoom() {
           <div className="relative flex flex-col items-center">
             <input
               onClick={() => setIsClickList(!isClickList)}
-              onChange={(e) => handleOnchange("cardNumber", e.target.value)}
               value={inputs.number}
               readOnly
               id="cardNumber"
@@ -138,7 +143,7 @@ function HostRoom() {
                     onClick={() => handleCardNumber(index)}
                     key={index}
                     className={`flex items-center justify-center h-8 text-gray-700 ${
-                      inputs.cardNumber === index + 1
+                      inputs.number === index + 1
                         ? "bg-blue-500 text-white"
                         : "bg-gray-100"
                     } cursor-pointer text-md font-inter hover:bg-blue-500 hover:text-gray-100`}
@@ -189,11 +194,11 @@ function HostRoom() {
         </div>
         {isEmpty && (
           <div className="flex justify-center w-full -mt-6 text-sm text-red-500 font-inter">
-            Please enter player name
+            Please enter host name
           </div>
         )}
         <button
-          onClick={handleJoin}
+          onClick={hostGame}
           className="flex items-center justify-center w-full h-12 text-lg font-medium bg-blue-600 rounded-md text-gray-50 hover:bg-blue-700"
         >
           Host

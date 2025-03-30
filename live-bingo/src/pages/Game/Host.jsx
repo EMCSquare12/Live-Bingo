@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useContext, useState } from "react";
+import GameContext from "../../context/GameContext";
 
 function Host() {
   const charStyle = {
@@ -11,34 +12,49 @@ function Host() {
       "bg-yellow-500",
     ],
   };
-  const [numbers, setNumbers] = useState([...Array(75)].map((_, i) => i + 1));
-  const [generatedNumber, setGeneratedNumber] = useState("X");
+
+  const { roomCode, inputs, bingoNumbers, setBingoNumbers } =
+    useContext(GameContext);
 
   const handleRollNumber = () => {
-    if (numbers.length === 0) return;
-    const randomNumber = numbers[Math.floor(Math.random() * numbers.length)];
-    const removedNumber = numbers.filter((num) => num !== randomNumber);
-    setNumbers(removedNumber);
-    setGeneratedNumber(randomNumber);
+    if (bingoNumbers.array.length === 0) return;
+    const randomNumber =
+      bingoNumbers.array[Math.floor(Math.random() * bingoNumbers.array.length)];
+    const removedNumber = bingoNumbers.array.filter(
+      (num) => num !== randomNumber
+    );
+    setBingoNumbers((prev) => ({
+      ...prev,
+      randomNumber: randomNumber,
+      array: removedNumber,
+    }));
     console.log(randomNumber);
   };
-  console.log(generatedNumber, numbers);
+
   return (
-    <>
-      <div className="grid  w-full h-auto grid-cols-[1fr_1.5fr_1fr] grid-rows-1 gap-10 py-20 p-10 bg-gray-900 items-start">
+    <div className="flex flex-col items-center justify-between bg-gray-900">
+      <div className="flex flex-row justify-start w-full gap-5 px-10">
+        <h1 className="py-5 ml-5 font-medium text-md text-gray-50 font-inter w-fit">
+          Host: {inputs.hostName?.toUpperCase()}
+        </h1>
+        <h1 className="py-5 font-medium text-md text-gray-50 font-inter w-fit">
+          Room Code: {roomCode}
+        </h1>
+      </div>
+      <div className="grid  w-full h-auto grid-cols-[1fr_1.5fr_1fr] grid-rows-1 gap-10  px-10 pb-10 items-start">
         <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 items-center justify-between p-10 shadow-lg">
           <div className="flex flex-col items-center justify-center gap-2">
-            {generatedNumber && (
+            {bingoNumbers.randomNumber && (
               <div
                 className={`flex items-center justify-center text-4xl font-bold ${
-                  charStyle.styles[Math.floor(generatedNumber / 15)]
+                  charStyle.styles[Math.floor(bingoNumbers.randomNumber / 15)]
                 } rounded-lg text-gray-50 w-14 h-14 font-inter`}
               >
-                {charStyle.char[Math.floor(generatedNumber / 15)]}
+                {charStyle.char[Math.floor(bingoNumbers.randomNumber / 15)]}
               </div>
             )}
             <div className="w-full font-medium text-center text-9xl font-inter text-gray-50">
-              {generatedNumber}
+              {bingoNumbers.randomNumber}
             </div>
           </div>
           <button
@@ -64,11 +80,11 @@ function Host() {
                 {Array.from({ length: 15 }, (_, numIndex) => (
                   <div
                     key={numIndex}
-                    className={`flex items-center justify-center text-sm font-medium text-center ${
-                      numbers.includes(numIndex + charIndex * 15 + 1)
-                        ? "bg-gray-500 text-gray-50"
-                        : `${charStyle.styles[charIndex]} text-gray-50`
-                    } rounded-md w-7 h-7 `}
+                    className={`flex items-center justify-center text-sm font-medium text-center text-gray-50 rounded-md w-7 h-7 ${
+                      bingoNumbers.array.includes(numIndex + charIndex * 15 + 1)
+                        ? "bg-gray-500"
+                        : `${charStyle.styles[charIndex]}`
+                    }`}
                   >
                     {numIndex + charIndex * 15 + 1}
                   </div>
@@ -79,7 +95,7 @@ function Host() {
         </div>
         <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg"></div>
       </div>
-    </>
+    </div>
   );
 }
 

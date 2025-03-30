@@ -3,10 +3,17 @@ import GameContext from "./GameContext";
 
 const GameProvider = ({ children }) => {
   const [isOpenModal, setIsOpenModal] = useState(false);
+  const [roomCode, setRoomCode] = useState(() => {
+    return localStorage.getItem("roomCode") || ""; // Load from localStorage
+  });
+  const [bingoNumbers, setBingoNumbers] = useState({
+    array: [...Array(75)].map((_, i) => i + 1),
+    randomNumber: "X",
+  });
   const [inputs, setInputs] = useState({
-    roomCode: "",
-    hostName: "",
     playerName: "",
+    hostName: localStorage.getItem("hostName") || "",
+    players: [],
     number: 1,
   });
   const [pattern, setPattern] = useState({
@@ -15,6 +22,7 @@ const GameProvider = ({ children }) => {
   });
 
   console.log(inputs);
+  console.log(roomCode);
 
   const value = useMemo(
     () => ({
@@ -24,8 +32,12 @@ const GameProvider = ({ children }) => {
       setPattern,
       inputs,
       setInputs,
+      roomCode,
+      setRoomCode,
+      bingoNumbers,
+      setBingoNumbers,
     }),
-    [pattern, isOpenModal, inputs]
+    [pattern, isOpenModal, inputs, roomCode, bingoNumbers]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

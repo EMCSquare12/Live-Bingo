@@ -6,35 +6,26 @@ import HostRoom from "./pages/Lobby/HostRoom";
 import Player from "./pages/Game/Player";
 import Host from "./pages/Game/Host";
 import GameProvider from "./context/GameProvider";
+import { useContext } from "react";
+import GameContext from "./context/GameContext";
 
 function App() {
+  const { roomCode } = useContext(GameContext);
   const router = createBrowserRouter([
     {
       path: "/",
       element: <Lobby />,
       children: [
-        {
-          index: true,
-          element: <JoinRoom />,
-        },
-        {
-          path: "host",
-          element: <HostRoom />,
-        },
+        { index: true, element: <JoinRoom /> },
+        { path: "host", element: <HostRoom /> },
       ],
     },
     {
-      path: "/game",
+      path: `/${roomCode || ":roomCode"}`, // Handle undefined roomCode
       element: <Game />,
       children: [
-        {
-          index: true,
-          element: <Host />,
-        },
-        {
-          path: "player",
-          element: <Player />,
-        },
+        { index: true, element: <Host /> },
+        { path: "player", element: <Player /> },
       ],
     },
   ]);

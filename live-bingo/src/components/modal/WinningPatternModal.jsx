@@ -5,7 +5,7 @@ import { GiRoundStar } from "react-icons/gi";
 const WinningPatternModal = () => {
   const { isOpenModal, setIsOpenModal, pattern, setPattern } =
     useContext(GameContext);
-  const patternRef = useRef(null);
+
   const [isMouseDown, setIsMouseDown] = useState(false);
 
   const handlePattern = (index) => {
@@ -25,12 +25,20 @@ const WinningPatternModal = () => {
   };
 
   const handleCancel = () => {
+    const newArray = Array.from({ length: 25 }, (_, index) => index);
     setIsOpenModal(false);
-    setPattern({ name: "Customize", array: [] });
+    setPattern((prev) => ({
+      ...prev,
+      name: "Customize",
+      array: newArray,
+    }));
   };
 
   const handleConfirm = () => {
-    setPattern((prev) => ({ ...prev, name: "Customize" }));
+    setPattern((prev) => ({
+      ...prev,
+      name: !prev.name ? "Customize" : prev.name,
+    }));
     setIsOpenModal(false);
   };
 
@@ -48,26 +56,23 @@ const WinningPatternModal = () => {
     };
   }, [isOpenModal, handleConfirm]); // Now it reacts to state changes
 
-  const handleClickOutside = (event) => {
-    if (patternRef.current && !patternRef.current.contains(event.target)) {
-      setIsOpenModal(false);
-      setPattern((prev) => ({ ...prev, name: "Customize" }));
-    }
-  };
-  useEffect(() => {
-    document.addEventListener("mousedown", handleClickOutside);
+  // const handleClickOutside = (event) => {
+  //   if (patternRef.current && !patternRef.current.contains(event.target)) {
+  //     setIsOpenModal(false);
+  //     setPattern((prev) => ({ ...prev, name: "Customize" }));
+  //   }
+  // };
+  // useEffect(() => {
+  //   document.addEventListener("mousedown", handleClickOutside);
 
-    return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, []);
+  //   return () => {
+  //     document.removeEventListener("mousedown", handleClickOutside);
+  //   };
+  // }, []);
 
   return (
-    <div className="fixed top-0 left-0 z-10 flex items-center justify-center w-screen h-screen bg-opacity-25 bg-gray-50">
-      <div
-        ref={patternRef}
-        className="flex flex-col gap-4 p-6 rounded-lg shadow-lg bg-gray-50"
-      >
+    <div className="fixed top-0 left-0 z-20 flex items-center justify-center w-screen h-screen bg-opacity-25 bg-gray-50">
+      <div className="flex flex-col gap-4 p-6 rounded-lg shadow-lg bg-gray-50">
         <div className="flex flex-col gap-1 rounded-md">
           {/* <label
             htmlFor="patternName"
