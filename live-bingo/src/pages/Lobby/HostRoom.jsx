@@ -22,9 +22,7 @@ function HostRoom() {
       setIsEmpty(true);
       return;
     }
-
-    socket.emit("create_game", inputs.hostName);
-
+    socket.emit("host_game",roomCode, inputs.hostName);
     navigate(`/${roomCode}`);
   };
 

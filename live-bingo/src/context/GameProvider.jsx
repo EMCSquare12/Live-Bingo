@@ -3,17 +3,14 @@ import GameContext from "./GameContext";
 
 const GameProvider = ({ children }) => {
   const [isOpenModal, setIsOpenModal] = useState(false);
-  const [roomCode, setRoomCode] = useState(() => {
-    return localStorage.getItem("roomCode") || ""; // Load from localStorage
-  });
+  const [roomCode, setRoomCode] = useState("");
   const [bingoNumbers, setBingoNumbers] = useState({
     array: [...Array(75)].map((_, i) => i + 1),
     randomNumber: "X",
   });
   const [inputs, setInputs] = useState({
     playerName: "",
-    hostName: localStorage.getItem("hostName") || "",
-    players: [],
+    hostName: "",
     number: 1,
   });
   const [pattern, setPattern] = useState({

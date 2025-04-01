@@ -3,6 +3,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
+const { hostname } = require("os");
 
 const app = express();
 const server = http.createServer(app);
@@ -12,52 +13,44 @@ const io = new Server(server, {
 
 app.use(cors());
 
-let games = {}; // Store active game rooms
-
 io.on("connection", (socket) => {
   // Host creates a game
-  const { v4: uuidv4 } = require("uuid");
 
-  io.on("connection", (socket) => {
-    socket.on("create_game", (hostName) => {
-      const gameCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase(); // Generate unique game code
+  const games = {}; // Store active games
+  const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
+  socket.emit("create_game", roomCode);
 
-      games[gameCode] = {
-        id: socket.id,
-        host: hostName, // Assign host name from frontend
-        players: [],
+  socket.on("host_game", (code, hostName) => {
+    if (code) {
+      games[code] = {
+        hostId: socket.id,
+        hostName,
       };
-
-      socket.join(gameCode);
-      socket.emit("game_created", { gameCode, host: hostName }); // Send structured data back to frontend
-
-      console.log(
-        `Game ${gameCode} created by host ${hostName} (${socket.id})`
-      );
-    });
-  });
-
-  // Player joins a game
-  socket.on("join_game", (gameCode) => {
-    if (games[gameCode]) {
-      games[gameCode].players.push(socket.id);
-      socket.join(gameCode);
-      io.to(gameCode).emit("player_joined", games[gameCode].players);
-      console.log(`Player ${socket.id} joined game ${gameCode}`);
-    } else {
-      socket.emit("error", "Game not found");
     }
+    console.log(games);
   });
 
-  // Start game
-  socket.on("start_game", (gameCode) => {
-    if (games[gameCode]?.host === socket.id) {
-      io.to(gameCode).emit("game_started");
-      console.log(`Game ${gameCode} started by host ${socket.id}`);
-    } else {
-      socket.emit("error", "Only the host can start the game");
-    }
-  });
+  // // Player joins a game
+  // socket.on("join_game", (gameCode) => {
+  //   if (games[gameCode]) {
+  //     games[gameCode].players.push(socket.id);
+  //     socket.join(gameCode);
+  //     io.to(gameCode).emit("player_joined", games[gameCode].players);
+  //     console.log(`Player ${socket.id} joined game ${gameCode}`);
+  //   } else {
+  //     socket.emit("error", "Game not found");
+  //   }
+  // });
+
+  // // Start game
+  // socket.on("start_game", (gameCode) => {
+  //   if (games[gameCode]?.host === socket.id) {
+  //     io.to(gameCode).emit("game_started");
+  //     console.log(`Game ${gameCode} started by host ${socket.id}`);
+  //   } else {
+  //     socket.emit("error", "Only the host can start the game");
+  //   }
+  // });
 
   // Handle disconnection
   socket.on("disconnect", () => {
