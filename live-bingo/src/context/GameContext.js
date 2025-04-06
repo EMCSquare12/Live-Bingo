@@ -3,9 +3,10 @@ import { createContext } from "react";
 const value = {
   isOpenModal: false,
   pattern: {},
-  inputs: {},
-  roomCode: "",
+  host: {},
   bingoNumbers: {},
+  roomCode: "",
+  player:{}
 };
 
 const GameContext = createContext(value);

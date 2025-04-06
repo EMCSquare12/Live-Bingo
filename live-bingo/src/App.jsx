@@ -10,7 +10,7 @@ import { useContext } from "react";
 import GameContext from "./context/GameContext";
 
 function App() {
-  const { roomCode } = useContext(GameContext);
+  const { player } = useContext(GameContext);
   const router = createBrowserRouter([
     {
       path: "/",
@@ -21,11 +21,11 @@ function App() {
       ],
     },
     {
-      path: `/${roomCode || ":roomCode"}`, // Handle undefined roomCode
+      path: "/:roomCode", // Handle undefined roomCode
       element: <Game />,
       children: [
         { index: true, element: <Host /> },
-        { path: "player", element: <Player /> },
+        { path: `:${player.id}`, element: <Player /> },
       ],
     },
   ]);

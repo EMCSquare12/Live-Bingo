@@ -1,5 +1,6 @@
 import { useContext, useState } from "react";
 import GameContext from "../../context/GameContext";
+import { useLocation } from "react-router-dom";
 
 function Host() {
   const charStyle = {
@@ -13,8 +14,9 @@ function Host() {
     ],
   };
 
-  const { roomCode, inputs, bingoNumbers, setBingoNumbers } =
+  const { host, bingoNumbers, setBingoNumbers, } =
     useContext(GameContext);
+  const location = useLocation();
 
   const handleRollNumber = () => {
     if (bingoNumbers.array.length === 0) return;
@@ -35,10 +37,10 @@ function Host() {
     <div className="flex flex-col items-center justify-between bg-gray-900">
       <div className="flex flex-row justify-start w-full gap-5 px-10">
         <h1 className="py-5 ml-5 font-medium text-md text-gray-50 font-inter w-fit">
-          Host: {inputs.hostName?.toUpperCase()}
+          Host: {host.hostName?.toUpperCase()}
         </h1>
         <h1 className="py-5 font-medium text-md text-gray-50 font-inter w-fit">
-          Room Code: {roomCode}
+          Room Code: {location.pathname.slice(1)}
         </h1>
       </div>
       <div className="grid  w-full h-auto grid-cols-[1fr_1.5fr_1fr] grid-rows-1 gap-10  px-10 pb-10 items-start">
@@ -93,7 +95,16 @@ function Host() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg"></div>
+        <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg">
+          <h1 className="p-2 font-medium font-inter text-md text-gray-50 w-fit">
+            Players: <span className="p-1 bg-gray-500 rounded">6 </span>
+          </h1>
+          <ul className="flex flex-col gap-1 px-4 mt-2">
+            <li className="flex flex-row gap-6 text-sm font-normal text-gray-50 font-inter">
+              <div>Erniel Caalim</div> <div>1</div>
+            </li>
+          </ul>
+        </div>
       </div>
     </div>
   );

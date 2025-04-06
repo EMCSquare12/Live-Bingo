@@ -1,29 +1,34 @@
 import { useState, useEffect, useRef, useContext } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 import GameContext from "../../context/GameContext";
 import { io } from "socket.io-client";
 
 function HostRoom() {
-  const { setIsOpenModal, pattern, setPattern, inputs, setInputs, roomCode } =
+  const { setIsOpenModal, pattern, setPattern, host, setHost } =
     useContext(GameContext);
-
   const [isClickList, setIsClickList] = useState(false);
   const [isEmpty, setIsEmpty] = useState(false);
   const [label, setLabel] = useState("");
   const nameRef = useRef(null);
   const listRef = useRef(null);
   const navigate = useNavigate();
-  const socket = io("http://localhost:3001");
-
-  const hostGame = async () => {
-    if (!inputs.hostName) {
+  const socket = io("http://localhost:3001", {
+    autoConnect: true,
+    reconnection: true,
+  });
+  const hostGame = () => {
+    if (!host.hostName) {
       setIsEmpty(true);
       return;
     }
-    socket.emit("host_game",roomCode, inputs.hostName);
-    navigate(`/${roomCode}`);
+    socket.emit("create-game", host.hostName);
+
+    socket.once("host-game", ({ roomCode }) => {
+      navigate(`/${roomCode}`);
+      console.log("Room code from server:", roomCode);
+    });
   };
 
   const handleClickOutside = (event) => {
@@ -49,7 +54,7 @@ function HostRoom() {
 
   const handleCardNumber = (index) => {
     setIsClickList(false);
-    setInputs((prev) => ({
+    setHost((prev) => ({
       ...prev,
       number: index + 1,
     }));
@@ -73,7 +78,7 @@ function HostRoom() {
   };
 
   const handleOnchange = (value) => {
-    setInputs((prev) => ({
+    setHost((prev) => ({
       ...prev,
       hostName: value,
     }));
@@ -97,7 +102,7 @@ function HostRoom() {
           <input
             ref={nameRef}
             onChange={(e) => handleOnchange(e.target.value)}
-            value={inputs.hostName}
+            value={host.hostName}
             id="name"
             type="text"
             className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter focus:ring-2 focus:ring-blue-500 w-72"
@@ -113,7 +118,7 @@ function HostRoom() {
           <div className="relative flex flex-col items-center">
             <input
               onClick={() => setIsClickList(!isClickList)}
-              value={inputs.number}
+              value={host.number}
               readOnly
               id="cardNumber"
               type="text"
@@ -141,7 +146,7 @@ function HostRoom() {
                     onClick={() => handleCardNumber(index)}
                     key={index}
                     className={`flex items-center justify-center h-8 text-gray-700 ${
-                      inputs.number === index + 1
+                      host.number === index + 1
                         ? "bg-blue-500 text-white"
                         : "bg-gray-100"
                     } cursor-pointer text-md font-inter hover:bg-blue-500 hover:text-gray-100`}

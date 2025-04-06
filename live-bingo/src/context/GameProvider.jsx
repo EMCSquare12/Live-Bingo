@@ -2,24 +2,26 @@ import { useState, useMemo } from "react";
 import GameContext from "./GameContext";
 
 const GameProvider = ({ children }) => {
-  const [isOpenModal, setIsOpenModal] = useState(false);
   const [roomCode, setRoomCode] = useState("");
+  const [isOpenModal, setIsOpenModal] = useState(false);
   const [bingoNumbers, setBingoNumbers] = useState({
     array: [...Array(75)].map((_, i) => i + 1),
     randomNumber: "X",
   });
-  const [inputs, setInputs] = useState({
-    playerName: "",
+  const [player, setPlayer] = useState({
+    playerId: "",
+    name: "",
+  });
+  const [host, setHost] = useState({
     hostName: "",
     number: 1,
+    players: [],
   });
+
   const [pattern, setPattern] = useState({
     name: "Customize",
     array: [],
   });
-
-  console.log(inputs);
-  console.log(roomCode);
 
   const value = useMemo(
     () => ({
@@ -27,14 +29,16 @@ const GameProvider = ({ children }) => {
       setIsOpenModal,
       pattern,
       setPattern,
-      inputs,
-      setInputs,
-      roomCode,
-      setRoomCode,
+      host,
+      setHost,
       bingoNumbers,
       setBingoNumbers,
+      roomCode,
+      setRoomCode,
+      player,
+      setPlayer,
     }),
-    [pattern, isOpenModal, inputs, roomCode, bingoNumbers]
+    [pattern, isOpenModal, host, roomCode,player, bingoNumbers]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

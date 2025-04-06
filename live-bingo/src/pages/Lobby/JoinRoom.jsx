@@ -1,15 +1,19 @@
-import { useState, useEffect, useRef, useContext, use } from "react";
-import { Await, data, Link } from "react-router-dom";
+import { useState, useEffect, useRef, useContext } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import GameContext from "../../context/GameContext";
 import { io } from "socket.io-client";
 
 function JoinRoom() {
   const [isEmpty, setIsEmpty] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [code, setCode] = useState("");
+  const navigate = useNavigate();
   const roomIdRef = useRef(null);
   const nameRef = useRef(null);
-  const { inputs, setInputs, roomCode, setRoomCode } = useContext(GameContext);
-  const socket = io("http://localhost:3001");
+  const { roomCode, player, setPlayer } = useContext(GameContext);
+  const socket = io("http://localhost:3001", {
+    autoConnect: true,
+    reconnection: true,
+  });
 
   useEffect(() => {
     const handleClick = () => setIsEmpty(false);
@@ -26,26 +30,21 @@ function JoinRoom() {
     };
   }, []);
 
-  const handleJoin = () => {
-    if (!inputs.playerName && !roomCode) {
-      setIsEmpty(true);
-      return;
-    }
-  };
-
   useEffect(() => {
-    if (!socket.connected) {
-      socket.connect(); // Ensures only one connection
-    }
-    socket.on("create_game", (roomCode) => {
-      setRoomCode(roomCode); // Store the generated room code
-      console.log(roomCode);
+    socket.on("joined-room", (id) => {
+      console.log(player);
+      setPlayer((prev) => ({ ...prev, id }));
     });
   }, []);
+  const handleJoin = () => {
+    if (!roomCode) return;
 
-  const handleOnchange = (value) => {
-    setInputs((prev) => ({ ...prev, playerName: value }));
+    if (roomCode === code) {
+      socket.emit("join-game", { roomCode, name: player.name });
+      navigate(`/${roomCode}/${player.id}`);
+    }
   };
+
   return (
     <div className="flex justify-between w-full h-full bg-gray-900 over">
       <section className="flex flex-col gap-4 px-16 mt-32 mb-16 w-fit h-fit">
@@ -60,9 +59,9 @@ function JoinRoom() {
             Room Code
           </label>
           <input
+            value={code}
+            onChange={(e) => setCode(e.target.value)}
             ref={roomIdRef}
-            // onChange={(e) => handleOnchange("roomCode", e.target.value)}
-            // value={roomCode}
             id="roomCode"
             type="text"
             className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter focus:ring-2 focus:ring-blue-500 w-72"
@@ -76,9 +75,11 @@ function JoinRoom() {
             Your Name
           </label>
           <input
+            value={player.name}
+            onChange={(e) =>
+              setPlayer((prev) => ({ ...prev, name: e.target.value }))
+            }
             ref={nameRef}
-            onChange={(e) => handleOnchange(e.target.value)}
-            value={inputs.playerName}
             id="name"
             type="text"
             className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter focus:ring-2 focus:ring-blue-500 w-72"
@@ -97,11 +98,7 @@ function JoinRoom() {
         </button>
         <div className="flex items-center justify-center w-full gap-1 font-normal text-gray-400 font-inter text-md">
           Hosting a game?{" "}
-          <Link
-            className="text-blue-400"
-            to={"/host"}
-            // onClick={handleCreateRoom}
-          >
+          <Link className="text-blue-400" to={"/host"}>
             Create room
           </Link>
         </div>
