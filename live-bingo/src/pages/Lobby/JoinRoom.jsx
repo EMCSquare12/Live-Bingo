@@ -9,7 +9,7 @@ function JoinRoom() {
   const navigate = useNavigate();
   const roomIdRef = useRef(null);
   const nameRef = useRef(null);
-  const { roomCode, player, setPlayer } = useContext(GameContext);
+  const {setRoomCode, roomCode, player, setPlayer } = useContext(GameContext);
   const socket = io("http://localhost:3001", {
     autoConnect: true,
     reconnection: true,
@@ -37,12 +37,12 @@ function JoinRoom() {
     });
   }, []);
   const handleJoin = () => {
-    if (!roomCode) return;
+    // if (!roomCode) return;
 
-    if (roomCode === code) {
-      socket.emit("join-game", { roomCode, name: player.name });
-      navigate(`/${roomCode}/${player.id}`);
-    }
+    // if (roomCode === code) {
+    //   socket.emit("join-game", { roomCode, name: player.name });
+    //   navigate(`/${roomCode}/${player.id}`);
+    // }
   };
 
   return (
@@ -98,9 +98,14 @@ function JoinRoom() {
         </button>
         <div className="flex items-center justify-center w-full gap-1 font-normal text-gray-400 font-inter text-md">
           Hosting a game?{" "}
-          <Link className="text-blue-400" to={"/host"}>
-            Create room
-          </Link>
+          <Link
+  className="text-blue-400"
+  to="/host"
+
+>
+  Create a room
+</Link>
+
         </div>
       </section>
     </div>

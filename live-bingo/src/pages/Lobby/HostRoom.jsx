@@ -19,18 +19,16 @@ function HostRoom() {
     reconnection: true,
   });
   const hostGame = () => {
-    if (!host.hostName) {
-      setIsEmpty(true);
-      return;
-    }
-    socket.emit("create-game", host.hostName);
+  if (!host.hostName) {
+    setIsEmpty(true);
+    return;
+  }
 
-    socket.once("host-game", ({ roomCode }) => {
+  socket.emit("create-room",host.hostName, host.cardNumber);
+    socket.once("room-created", (roomCode) => {
       navigate(`/${roomCode}`);
-      console.log("Room code from server:", roomCode);
     });
-  };
-
+};
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
       setIsClickList(false);
@@ -56,7 +54,7 @@ function HostRoom() {
     setIsClickList(false);
     setHost((prev) => ({
       ...prev,
-      number: index + 1,
+      cardNumber: index + 1,
     }));
   };
 
@@ -118,7 +116,7 @@ function HostRoom() {
           <div className="relative flex flex-col items-center">
             <input
               onClick={() => setIsClickList(!isClickList)}
-              value={host.number}
+              value={host.cardNumber}
               readOnly
               id="cardNumber"
               type="text"
@@ -146,7 +144,7 @@ function HostRoom() {
                     onClick={() => handleCardNumber(index)}
                     key={index}
                     className={`flex items-center justify-center h-8 text-gray-700 ${
-                      host.number === index + 1
+                      host.cardNumber === index + 1
                         ? "bg-blue-500 text-white"
                         : "bg-gray-100"
                     } cursor-pointer text-md font-inter hover:bg-blue-500 hover:text-gray-100`}

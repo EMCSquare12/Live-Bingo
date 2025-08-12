@@ -3,9 +3,6 @@ const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
-
-
-
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
@@ -13,52 +10,19 @@ const io = new Server(server, {
 });
 
 app.use(cors());
-
+const games = {};
 io.on("connection", (socket) => {
-  const games = {};
-  socket.on("create-game", (hostName) => {
+  console.log("Client connected");
+
+  // Create room
+  socket.on("create-room", (hostName, cardNumber) => {
     const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
-
-    games[roomCode] = {
-      hostName,
-      players: []
-    };
-
-    socket.emit("host-game", { roomCode });
-    console.log(games)
-  });
-
-  socket.on("join-game", ({ roomCode, name }) => {
-    const game = games[roomCode];
-
-    if (!game) {
-      console.log("Error, game not found");
-      socket.emit("error", "Game not found");
-      return;
-    }
-
-    // const existingPlayer = game.players.find(p => p.playerId === socket.id);
-    // if (existingPlayer) {
-    //   console.log("Player already joined.");
-    //   return;
-    // }
-
-    const player = {
-      id: socket.id,
-      name
-    };
-    socket.emit("joined-room", player.id);
-    game.players.push(player);
-    socket.join(roomCode);
-
-
-    console.log(`Player ${name} joined room ${roomCode}`);
+    console.log("Host Name :", hostName);
+    socket.emit("room-created", roomCode);
+    games[roomCode] = {hostName, cardNumber}
     console.log(games);
   });
-
 });
-
-
 
 // Start server
 const PORT = 3001;
