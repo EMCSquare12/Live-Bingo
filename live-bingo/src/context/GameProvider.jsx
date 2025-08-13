@@ -15,20 +15,19 @@ const GameProvider = ({ children }) => {
   const [host, setHost] = useState({
     hostName: "",
     cardNumber: 1,
+    cardWinningPattern:{
+      name:"",
+      index:[]
+    },
     players: [],
   });
 
-  const [pattern, setPattern] = useState({
-    name: "Customize",
-    array: [],
-  });
+  
 
   const value = useMemo(
     () => ({
       isOpenModal,
       setIsOpenModal,
-      pattern,
-      setPattern,
       host,
       setHost,
       bingoNumbers,
@@ -38,7 +37,7 @@ const GameProvider = ({ children }) => {
       player,
       setPlayer,
     }),
-    [pattern, isOpenModal, host, roomCode,player, bingoNumbers]
+    [ isOpenModal, host, roomCode,player, bingoNumbers]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -3,26 +3,26 @@ import GameContext from "../../context/GameContext";
 import { GiRoundStar } from "react-icons/gi";
 
 const WinningPatternModal = () => {
-  const { isOpenModal, setIsOpenModal, pattern, setPattern } =
+  const { isOpenModal, setIsOpenModal,host, setHost } =
     useContext(GameContext);
 
   const [isMouseDown, setIsMouseDown] = useState(false);
 
-  const handlePattern = (index) => {
-    setPattern((prev) => {
-      const updatedArray = prev.array.includes(index)
-        ? prev.array.filter((item) => item !== index) // Remove index if it exists
-        : [...prev.array, index]; // Add index if it doesn't exist
+  // const handlePattern = (index) => {
+  //   setHost((prev) => {
+  //     const updatedArray = prev.array.includes(index)
+  //       ? prev.array.filter((item) => item !== index) // Remove index if it exists
+  //       : [...prev.array, index]; // Add index if it doesn't exist
 
-      return { ...prev, array: updatedArray };
-    });
-  };
+  //     return { ...prev, array: updatedArray };
+  //   });
+  // };
 
-  const handleMousePattern = (index) => {
-    if (isMouseDown) {
-      handlePattern(index);
-    }
-  };
+  // const handleMousePattern = (index) => {
+  //   if (isMouseDown) {
+  //     handlePattern(index);
+  //   }
+  // };
 
   const handleCancel = () => {
     const newArray = Array.from({ length: 25 }, (_, index) => index);

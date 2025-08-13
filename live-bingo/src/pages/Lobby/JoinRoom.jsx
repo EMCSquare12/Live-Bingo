@@ -36,6 +36,7 @@ function JoinRoom() {
       setPlayer((prev) => ({ ...prev, id }));
     });
   }, []);
+  
   const handleJoin = () => {
     // if (!roomCode) return;
 

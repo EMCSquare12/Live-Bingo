@@ -6,7 +6,7 @@ import GameContext from "../../context/GameContext";
 import { io } from "socket.io-client";
 
 function HostRoom() {
-  const { setIsOpenModal, pattern, setPattern, host, setHost } =
+  const { setIsOpenModal,  host, setHost } =
     useContext(GameContext);
   const [isClickList, setIsClickList] = useState(false);
   const [isEmpty, setIsEmpty] = useState(false);
@@ -23,12 +23,13 @@ function HostRoom() {
     setIsEmpty(true);
     return;
   }
-
-  socket.emit("create-room",host.hostName, host.cardNumber);
-    socket.once("room-created", (roomCode) => {
-      navigate(`/${roomCode}`);
-    });
+  socket.emit("create-room",host.hostName, host.cardNumber, host.cardWinningPattern);
+    socket.once("room-created", (roomCode, hostName) => {
+  localStorage.setItem("roomCode", roomCode);
+  navigate(`/${roomCode}`);
+});
 };
+
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
       setIsClickList(false);
@@ -59,21 +60,27 @@ function HostRoom() {
   };
 
   const handleBlackout = () => {
-    const newArr = [...Array(25)].map((_, index) => index);
-    setPattern((prev) => ({ ...prev, array: newArr }));
-  };
+  const newArr = Array.from({ length: 25 }, (_, index) => index);
+  setHost((prev) => ({
+    ...prev,
+    cardWinningPattern: {
+      name:"Blackout",
+      index: newArr
+    }
+  }));
+};
 
-  const handleCustomize = (label) => {
-    setLabel(label);
-    setIsOpenModal(true);
-    setPattern((prev) => ({
-      ...prev,
-      name: "",
-      array:
-        prev.array.length === 25 && label === "customize" ? [] : prev.array,
-    }));
-    console.log(pattern.array);
-  };
+
+  // const handleCustomize = (label) => {
+  //   setLabel(label);
+  //   setIsOpenModal(true);
+  //   setHost((prev) => ({
+  //     ...prev,
+  //     cardWinningPattern:
+  //       prev.array.length === 25 && label === "customize" ? [] : prev.array,
+  //   }));
+  //   console.log(host.cardWinningPattern.index);
+  // };
 
   const handleOnchange = (value) => {
     setHost((prev) => ({
@@ -167,7 +174,7 @@ function HostRoom() {
               type="radio"
               value="blackout"
               name="cardPattern"
-              className="w-5 h-5 rounded-md outline-none "
+              className="w-5 h-5 rounded-md outline-none"
             />
             <label
               htmlFor="blackout"
@@ -189,7 +196,7 @@ function HostRoom() {
               htmlFor="customize"
               className="text-sm font-normal cursor-pointer text-gray-50 w-fit font-inter"
             >
-              {pattern.name}
+              {host.cardWinningPattern.name}
             </label>
           </div>
         </div>

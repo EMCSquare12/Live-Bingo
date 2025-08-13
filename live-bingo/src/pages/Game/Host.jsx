@@ -1,6 +1,7 @@
-import { useContext, useState } from "react";
+import { useContext, useEffect} from "react";
 import GameContext from "../../context/GameContext";
 import { useLocation } from "react-router-dom";
+import { io } from "socket.io-client";
 
 function Host() {
   const charStyle = {
@@ -13,10 +14,26 @@ function Host() {
       "bg-yellow-500",
     ],
   };
-
-  const { host, bingoNumbers, setBingoNumbers, } =
+  const { host, setHost, bingoNumbers, setBingoNumbers } =
     useContext(GameContext);
   const location = useLocation();
+   const socket = io("http://localhost:3001", {
+    autoConnect: true,
+    reconnection: true,
+  });
+
+ useEffect(() => {
+  const savedRoomCode = localStorage.getItem("roomCode");
+  if (savedRoomCode) {
+    socket.emit("rejoin-room", savedRoomCode);
+  }
+
+  socket.on("room-data", (gameData) => {
+    setHost(gameData); // restore state
+  });
+}, []);
+
+
 
   const handleRollNumber = () => {
     if (bingoNumbers.array.length === 0) return;
@@ -44,7 +61,7 @@ function Host() {
         </h1>
       </div>
       <div className="grid  w-full h-auto grid-cols-[1fr_1.5fr_1fr] grid-rows-1 gap-10  px-10 pb-10 items-start">
-        <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 items-center justify-between p-10 shadow-lg">
+        <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 aitems-center justify-between p-10 shadow-lg">
           <div className="flex flex-col items-center justify-center gap-2">
             {bingoNumbers.randomNumber && (
               <div

@@ -6,12 +6,13 @@ import { useNavigate } from "react-router-dom";
 import { use, useContext, useState } from "react";
 import WinningPatternCard from "./WinningPatternCard";
 import GameContext from "../context/GameContext";
+import Host from "../pages/Game/Host";
 
 function Header() {
   const navigate = useNavigate();
   const [isClickSound, setIsClickSound] = useState(false);
   const [isMouseEnter, setIsMouseEnter] = useState(false);
-  const { pattern, setIsOpenModal, isOpenModal, setBingoNumbers } =
+  const {setIsOpenModal, isOpenModal, setBingoNumbers, host } =
     useContext(GameContext);
 
   const handleNewGame = () => {
@@ -32,7 +33,7 @@ function Header() {
           onMouseLeave={() => setIsMouseEnter(false)}
           className="relative z-10 flex items-center justify-center px-3 -mt-2 -mb-2 font-medium text-gray-100 w-fit text-md font-inter hover:bg-gray-700"
         >
-          Winning Pattern: {pattern.name}
+          Winning Pattern: {host.cardWinningPattern.name}
           {isMouseEnter && (
             <div className="absolute flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full bg-gray-50 w-60">
               <WinningPatternCard />
