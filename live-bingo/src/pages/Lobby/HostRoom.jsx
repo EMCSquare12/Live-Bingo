@@ -6,11 +6,9 @@ import GameContext from "../../context/GameContext";
 import { io } from "socket.io-client";
 
 function HostRoom() {
-  const { setIsOpenModal,  host, setHost } =
-    useContext(GameContext);
+  const { setIsOpenModal, host, setHost } = useContext(GameContext);
   const [isClickList, setIsClickList] = useState(false);
   const [isEmpty, setIsEmpty] = useState(false);
-  const [label, setLabel] = useState("");
   const nameRef = useRef(null);
   const listRef = useRef(null);
   const navigate = useNavigate();
@@ -19,16 +17,24 @@ function HostRoom() {
     reconnection: true,
   });
   const hostGame = () => {
-  if (!host.hostName) {
-    setIsEmpty(true);
-    return;
-  }
-  socket.emit("create-room",host.hostName, host.cardNumber, host.cardWinningPattern);
-    socket.once("room-created", (roomCode, hostName) => {
-  localStorage.setItem("roomCode", roomCode);
-  navigate(`/${roomCode}`);
-});
-};
+    if (!host.hostName) {
+      setIsEmpty(true);
+      return;
+    }
+    socket.emit(
+      "create-room",
+      host.hostName,
+      host.cardNumber,
+      host.cardWinningPattern
+    );
+  };
+
+  useEffect(() => {
+    socket.on("room-created", (roomCode, hostName) => {
+      setHost((prev) => ({ ...prev, hostName }));
+      navigate(`/${roomCode}`);
+    });
+  }, []);
 
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
@@ -60,34 +66,22 @@ function HostRoom() {
   };
 
   const handleBlackout = () => {
-  const newArr = Array.from({ length: 25 }, (_, index) => index);
-  setHost((prev) => ({
-    ...prev,
-    cardWinningPattern: {
-      name:"Blackout",
-      index: newArr
-    }
-  }));
-};
+    const newArr = Array.from({ length: 25 }, (_, index) => index);
+    setHost((prev) => ({
+      ...prev,
+      cardWinningPattern: { ...prev.cardWinningPattern, index: newArr },
+    }));
+  };
 
-
-  // const handleCustomize = (label) => {
-  //   setLabel(label);
-  //   setIsOpenModal(true);
-  //   setHost((prev) => ({
-  //     ...prev,
-  //     cardWinningPattern:
-  //       prev.array.length === 25 && label === "customize" ? [] : prev.array,
-  //   }));
-  //   console.log(host.cardWinningPattern.index);
-  // };
+  const handleCustomize = () => {
+    setIsOpenModal(true);
+  };
 
   const handleOnchange = (value) => {
     setHost((prev) => ({
       ...prev,
       hostName: value,
     }));
-    localStorage.setItem("hostName", value);
   };
 
   return (
