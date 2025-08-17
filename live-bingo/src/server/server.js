@@ -20,23 +20,12 @@ io.on("connection", (socket) => {
   socket.on("create-room", (hostName, cardNumber, cardWinningPattern) => {
     const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
     games[roomCode] = { hostName, cardNumber, cardWinningPattern };
-
-    socket.join(roomCode); // make socket part of that room
-    socket.emit("room-created", roomCode, games[roomCode].hostName);
+    socket.broadcast.emit("room-created", roomCode, games[roomCode].hostName);
 
     console.log(`Room created: ${roomCode}`, games);
   });
 
-  // Rejoin existing room
-  socket.on("rejoin-room", (roomCode) => {
-    if (games[roomCode]) {
-      socket.join(roomCode);
-      socket.emit("room-data", games[roomCode]); // send game state back
-      console.log(`Client rejoined room ${roomCode}`);
-    } else {
-      socket.emit("error", "Room does not exist");
-    }
-  });
+
 });
 
 // Start server
