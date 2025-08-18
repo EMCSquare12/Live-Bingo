@@ -75,6 +75,10 @@ function HostRoom() {
 
   const handleCustomize = () => {
     setIsOpenModal(true);
+    setHost((prev) => ({
+      ...prev,
+      cardWinningPattern: { ...prev.cardWinningPattern, index: [] },
+    }));
   };
 
   const handleOnchange = (value) => {
@@ -166,6 +170,7 @@ function HostRoom() {
               onClick={handleBlackout}
               id="blackout"
               type="radio"
+              checked = {host.cardWinningPattern.index.length === 25}
               value="blackout"
               name="cardPattern"
               className="w-5 h-5 rounded-md outline-none"
