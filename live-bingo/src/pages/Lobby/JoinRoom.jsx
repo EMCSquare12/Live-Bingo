@@ -5,15 +5,16 @@ import { io } from "socket.io-client";
 
 function JoinRoom() {
   const [isEmpty, setIsEmpty] = useState(false);
-  const [code, setCode] = useState("");
   const navigate = useNavigate();
   const roomIdRef = useRef(null);
   const nameRef = useRef(null);
-  const {setRoomCode, roomCode, player, setPlayer } = useContext(GameContext);
+  const { setRoomCode, roomCode, player, setPlayer } = useContext(GameContext);
   const socket = io("http://localhost:3001", {
     autoConnect: true,
     reconnection: true,
   });
+
+  console.log(roomCode);
 
   useEffect(() => {
     const handleClick = () => setIsEmpty(false);
@@ -31,19 +32,23 @@ function JoinRoom() {
   }, []);
 
   useEffect(() => {
-    socket.on("joined-room", (id) => {
-      console.log(player);
-      setPlayer((prev) => ({ ...prev, id }));
+    socket.on("joined-room", (roomCode, player) => {
+      console.log("You joined:", player);
+      navigate(`/${roomCode}/${player.id}`);
     });
-  }, []);
-  
-  const handleJoin = () => {
-    // if (!roomCode) return;
 
-    // if (roomCode === code) {
-    //   socket.emit("join-game", { roomCode, name: player.name });
-    //   navigate(`/${roomCode}/${player.id}`);
-    // }
+    socket.on("player-joined", (player) => {
+      console.log("Another player joined:", player);
+    });
+
+    return () => {
+      socket.off("joined-room");
+      socket.off("player-joined");
+    };
+  }, [navigate]);
+
+  const handleJoin = () => {
+    socket.emit("join-room", player.name, roomCode);
   };
 
   return (
@@ -60,8 +65,8 @@ function JoinRoom() {
             Room Code
           </label>
           <input
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
+            value={roomCode}
+            onChange={(e) => setRoomCode(e.target.value)}
             ref={roomIdRef}
             id="roomCode"
             type="text"
@@ -99,14 +104,9 @@ function JoinRoom() {
         </button>
         <div className="flex items-center justify-center w-full gap-1 font-normal text-gray-400 font-inter text-md">
           Hosting a game?{" "}
-          <Link
-  className="text-blue-400"
-  to="/host"
-
->
-  Create a room
-</Link>
-
+          <Link className="text-blue-400" to="/host">
+            Create a room
+          </Link>
         </div>
       </section>
     </div>

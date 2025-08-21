@@ -6,7 +6,8 @@ import GameContext from "../../context/GameContext";
 import { io } from "socket.io-client";
 
 function HostRoom() {
-  const { setIsOpenModal, host, setHost } = useContext(GameContext);
+  const { setIsOpenModal, host, setHost, setRoomCode, roomCode } =
+    useContext(GameContext);
   const [isClickList, setIsClickList] = useState(false);
   const [isEmpty, setIsEmpty] = useState(false);
   const nameRef = useRef(null);
@@ -16,6 +17,7 @@ function HostRoom() {
     autoConnect: true,
     reconnection: true,
   });
+
   const hostGame = () => {
     if (!host.hostName) {
       setIsEmpty(true);
@@ -27,14 +29,11 @@ function HostRoom() {
       host.cardNumber,
       host.cardWinningPattern
     );
-  };
-
-  useEffect(() => {
-    socket.on("room-created", (roomCode, hostName) => {
-      setHost((prev) => ({ ...prev, hostName }));
+    socket.on("room-created", (roomCode) => {
+      setRoomCode(roomCode);
       navigate(`/${roomCode}`);
     });
-  }, []);
+  };
 
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
@@ -75,10 +74,6 @@ function HostRoom() {
 
   const handleCustomize = () => {
     setIsOpenModal(true);
-    setHost((prev) => ({
-      ...prev,
-      cardWinningPattern: { ...prev.cardWinningPattern, index: [] },
-    }));
   };
 
   const handleOnchange = (value) => {
@@ -170,7 +165,6 @@ function HostRoom() {
               onClick={handleBlackout}
               id="blackout"
               type="radio"
-              checked = {host.cardWinningPattern.index.length === 25}
               value="blackout"
               name="cardPattern"
               className="w-5 h-5 rounded-md outline-none"

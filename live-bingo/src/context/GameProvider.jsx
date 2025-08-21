@@ -9,7 +9,7 @@ const GameProvider = ({ children }) => {
     randomNumber: "X",
   });
   const [player, setPlayer] = useState({
-    playerId: "",
+    id: "",
     name: "",
   });
   const [host, setHost] = useState({
@@ -32,6 +32,8 @@ const GameProvider = ({ children }) => {
       setBingoNumbers,
       player,
       setPlayer,
+      roomCode,
+      setRoomCode,
     }),
     [isOpenModal, host, roomCode, player, bingoNumbers]
   );

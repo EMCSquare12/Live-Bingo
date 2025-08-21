@@ -1,4 +1,4 @@
-import { useContext,  useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import GameContext from "../../context/GameContext";
 import { GiRoundStar } from "react-icons/gi";
 
@@ -13,7 +13,7 @@ const WinningPatternModal = () => {
         cardWinningPattern: (prev) => ({ ...prev, name: "Customize" }),
       }));
     }
-const newArr = Array.from({ length: 25 }, (_, index) => index);
+    const newArr = Array.from({ length: 25 }, (_, index) => index);
     setHost((prev) => ({
       ...prev,
       cardWinningPattern: { ...prev.cardWinningPattern, index: newArr },
@@ -34,23 +34,22 @@ const newArr = Array.from({ length: 25 }, (_, index) => index);
     setIsOpenModal(false);
   };
 
-const handlePattern = (index) => {
-  setHost((prev) => {
-    const exists = prev.cardWinningPattern.index.includes(index);
+  const handlePattern = (index) => {
+    setHost((prev) => {
+      const exists = prev.cardWinningPattern.index.includes(index);
 
-    return {
-      ...prev,
-      cardWinningPattern: {
-        ...prev.cardWinningPattern,
-        index: exists
-          ? prev.cardWinningPattern.index.filter((i) => i !== index) // remove
-          : [...prev.cardWinningPattern.index, index] // add
-      }
-    };
-  });
-  console.log(host.cardWinningPattern.index)
-};
-
+      return {
+        ...prev,
+        cardWinningPattern: {
+          ...prev.cardWinningPattern,
+          index: exists
+            ? prev.cardWinningPattern.index.filter((i) => i !== index) // remove
+            : [...prev.cardWinningPattern.index, index], // add
+        },
+      };
+    });
+    console.log(host.cardWinningPattern.index);
+  };
 
   useEffect(() => {
     const handleEnterConfirm = (event) => {
@@ -90,12 +89,15 @@ const handlePattern = (index) => {
         <div className="grid grid-cols-5 grid-rows-5 gap-2 p-4 bg-gray-200 rounded-md w-fit">
           {Array.from({ length: 25 }, (_, index) => (
             <button
-            
               onClick={() => handlePattern(index)}
               key={index}
-              disabled = {index === 12}
+              disabled={index === 12}
               className={`w-10 h-10 border-2 border-gray-600 rounded-md items-center justify-center flex text-gray-600 text-xl 
-                ${host.cardWinningPattern.index.includes(index) || index=== 12? "bg-gray-600 text-gray-50": "bg-gray-50 text-gray-600"}
+                ${
+                  host.cardWinningPattern.index.includes(index) || index === 12
+                    ? "bg-gray-600 text-gray-50"
+                    : "bg-gray-50 text-gray-600"
+                }
                `}
             >
               {index === 12 && <GiRoundStar className="text-gray-50" />}

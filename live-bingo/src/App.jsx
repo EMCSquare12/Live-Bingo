@@ -21,11 +21,11 @@ function App() {
       ],
     },
     {
-      path: "/:roomCode", // Handle undefined roomCode
+      path: "/:roomCode",
       element: <Game />,
       children: [
         { index: true, element: <Host /> },
-        { path: `:${player.id}`, element: <Player /> },
+        { path: ":playerId", element: <Player /> }, // dynamic playerId
       ],
     },
   ]);

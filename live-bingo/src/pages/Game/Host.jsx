@@ -1,4 +1,4 @@
-import { useContext, useEffect} from "react";
+import { useContext, useEffect } from "react";
 import GameContext from "../../context/GameContext";
 import { useLocation } from "react-router-dom";
 import { io } from "socket.io-client";
@@ -17,23 +17,21 @@ function Host() {
   const { host, setHost, bingoNumbers, setBingoNumbers } =
     useContext(GameContext);
   const location = useLocation();
-   const socket = io("http://localhost:3001", {
+  const socket = io("http://localhost:3001", {
     autoConnect: true,
     reconnection: true,
   });
 
- useEffect(() => {
-  const savedRoomCode = localStorage.getItem("roomCode");
-  if (savedRoomCode) {
-    socket.emit("rejoin-room", savedRoomCode);
-  }
+  useEffect(() => {
+    const savedRoomCode = localStorage.getItem("roomCode");
+    if (savedRoomCode) {
+      socket.emit("rejoin-room", savedRoomCode);
+    }
 
-  socket.on("room-data", (gameData) => {
-    setHost(gameData); // restore state
-  });
-}, []);
-
-
+    socket.on("room-data", (gameData) => {
+      setHost(gameData); // restore state
+    });
+  }, []);
 
   const handleRollNumber = () => {
     if (bingoNumbers.array.length === 0) return;
