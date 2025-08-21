@@ -14,19 +14,50 @@ app.use(cors());
 const games = {};
 
 io.on("connection", (socket) => {
-  console.log("Client connected");
-
   // Create room
   socket.on("create-room", (hostName, cardNumber, cardWinningPattern) => {
     const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
-    games[roomCode] = { hostName, cardNumber, cardWinningPattern };
-    socket.broadcast.emit("room-created", roomCode, games[roomCode].hostName);
+    games[roomCode] = {
+      hostName,
+      cardNumber,
+      cardWinningPattern,
+      players: []
+    };
+    socket.join(roomCode);
 
-    console.log(`Room created: ${roomCode}`, games);
+    // Only tell the creator their room was created
+    socket.emit("room-created", roomCode, hostName);
+    console.log(`Room created: ${roomCode}`, games[roomCode]);
+  });
+
+  // Join room
+  socket.on("join-room", (playerName, roomCode) => {
+    if (!games[roomCode]) {
+      socket.emit("error", "Room does not exist");
+      return;
+    }
+
+    const player = { id: socket.id, name: playerName };
+    games[roomCode].players.push(player);
+
+    socket.join(roomCode);
+
+    // Tell the joining player
+    socket.emit("joined-room", roomCode, player);
+    console.log(`Player ${player.name} with id ${player.id}has joined the game`)
+
+    // Tell others in the room
+    socket.to(roomCode).emit("player-joined", player);
   });
 
 
+  // Handle disconnect
+  socket.on("disconnect", () => {
+    console.log("Client disconnected:", socket.id);
+    // Optional: remove player from games
+  });
 });
+
 
 // Start server
 const PORT = 3001;
