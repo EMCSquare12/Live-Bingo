@@ -31,24 +31,18 @@ function JoinRoom() {
     };
   }, []);
 
-  useEffect(() => {
-    socket.on("joined-room", (roomCode, player) => {
-      console.log("You joined:", player);
+  const handleJoin = () => {
+    socket.emit("join-room", player.name, roomCode);
+
+    socket.on("joined-room", (roomCode, player, cards) => {
+      setPlayer((prev) => ({ ...prev, cards }));
+      console.log(player);
       navigate(`/${roomCode}/${player.id}`);
     });
 
     socket.on("player-joined", (player) => {
       console.log("Another player joined:", player);
     });
-
-    return () => {
-      socket.off("joined-room");
-      socket.off("player-joined");
-    };
-  }, [navigate]);
-
-  const handleJoin = () => {
-    socket.emit("join-room", player.name, roomCode);
   };
 
   return (

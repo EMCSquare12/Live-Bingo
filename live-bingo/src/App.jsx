@@ -6,11 +6,8 @@ import HostRoom from "./pages/Lobby/HostRoom";
 import Player from "./pages/Game/Player";
 import Host from "./pages/Game/Host";
 import GameProvider from "./context/GameProvider";
-import { useContext } from "react";
-import GameContext from "./context/GameContext";
 
 function App() {
-  const { player } = useContext(GameContext);
   const router = createBrowserRouter([
     {
       path: "/",

@@ -11,6 +11,7 @@ const GameProvider = ({ children }) => {
   const [player, setPlayer] = useState({
     id: "",
     name: "",
+    cards: [],
   });
   const [host, setHost] = useState({
     hostName: "",
