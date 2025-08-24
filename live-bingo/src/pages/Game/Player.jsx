@@ -5,7 +5,6 @@ import GameContext from "../../context/GameContext";
 function Player() {
   const { player } = useContext(GameContext);
   const [isRefreshed, setIsRefreshed] = useState(false);
-  console.log(player);
 
   return (
     <>

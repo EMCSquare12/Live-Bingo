@@ -8,13 +8,14 @@ function JoinRoom() {
   const navigate = useNavigate();
   const roomIdRef = useRef(null);
   const nameRef = useRef(null);
-  const { setRoomCode, roomCode, player, setPlayer } = useContext(GameContext);
+  const { setRoomCode, roomCode, player, setPlayer, setHost, host } =
+    useContext(GameContext);
   const socket = io("http://localhost:3001", {
     autoConnect: true,
     reconnection: true,
   });
 
-  console.log(roomCode);
+  console.log(host.players);
 
   useEffect(() => {
     const handleClick = () => setIsEmpty(false);
@@ -33,15 +34,11 @@ function JoinRoom() {
 
   const handleJoin = () => {
     socket.emit("join-room", player.name, roomCode);
-
-    socket.on("joined-room", (roomCode, player, cards) => {
-      setPlayer((prev) => ({ ...prev, cards }));
-      console.log(player);
+    socket.once("joined-room", (roomCode, player) => {
+      console.log("✅ joined-room received:", roomCode, player);
+      setPlayer(player);
+      setHost((prev) => ({ ...prev, players: [...prev.players, player] }));
       navigate(`/${roomCode}/${player.id}`);
-    });
-
-    socket.on("player-joined", (player) => {
-      console.log("Another player joined:", player);
     });
   };
 

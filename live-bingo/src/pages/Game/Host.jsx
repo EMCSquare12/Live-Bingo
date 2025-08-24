@@ -14,6 +14,7 @@ function Host() {
       "bg-yellow-500",
     ],
   };
+
   const { host, setHost, bingoNumbers, setBingoNumbers } =
     useContext(GameContext);
   const location = useLocation();
@@ -21,17 +22,6 @@ function Host() {
     autoConnect: true,
     reconnection: true,
   });
-
-  useEffect(() => {
-    const savedRoomCode = localStorage.getItem("roomCode");
-    if (savedRoomCode) {
-      socket.emit("rejoin-room", savedRoomCode);
-    }
-
-    socket.on("room-data", (gameData) => {
-      setHost(gameData); // restore state
-    });
-  }, []);
 
   const handleRollNumber = () => {
     if (bingoNumbers.array.length === 0) return;
@@ -112,11 +102,16 @@ function Host() {
         </div>
         <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg">
           <h1 className="p-2 font-medium font-inter text-md text-gray-50 w-fit">
-            Players: <span className="p-1 bg-gray-500 rounded">6 </span>
+            Players:{" "}
+            <span className="p-1 bg-gray-500 rounded">
+              {host.players.length}{" "}
+            </span>
           </h1>
           <ul className="flex flex-col gap-1 px-4 mt-2">
             <li className="flex flex-row gap-6 text-sm font-normal text-gray-50 font-inter">
-              <div>Erniel Caalim</div> <div>1</div>
+              {host.players?.map((value, index) => {
+                <div>{value.name}</div>;
+              })}
             </li>
           </ul>
         </div>
