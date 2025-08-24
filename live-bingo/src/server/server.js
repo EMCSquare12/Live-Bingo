@@ -38,13 +38,14 @@ io.on("connection", (socket) => {
 
     return Array.from(uniqueNumbers);
   };
-  const newLN = {
-    B: generateUniqueNumbers(1, 15, 5), // Unique numbers for 'B'
-    I: generateUniqueNumbers(16, 30, 5), // Unique numbers for 'I'
-    N: generateUniqueNumbers(31, 45, 5), // Unique numbers for 'N'
-    G: generateUniqueNumbers(46, 60, 5), // Unique numbers for 'G'
-    O: generateUniqueNumbers(61, 75, 5), // Unique numbers for 'O'
-  };
+  const generateCard = () => ({
+    B: generateUniqueNumbers(1, 15, 5),
+    I: generateUniqueNumbers(16, 30, 5),
+    N: generateUniqueNumbers(31, 45, 5),
+    G: generateUniqueNumbers(46, 60, 5),
+    O: generateUniqueNumbers(61, 75, 5),
+  });
+
 
   // Join room
   socket.on("join-room", (playerName, roomCode) => {
@@ -54,16 +55,16 @@ io.on("connection", (socket) => {
     }
     let cards = []
     for (let i = 0; i < games[roomCode].cardNumber; i++) {
-      cards.push(newLN)
+      cards.push(generateCard())
     }
-
     const player = { id: socket.id, name: playerName, cards };
-    games[roomCode].players.push(player);
+    const exists = games[roomCode].players.find(p => p.id === socket.id);
+    if (!exists) {
+      games[roomCode].players.push(player);
+    }
     socket.join(roomCode);
-
     socket.emit("joined-room", roomCode, player);
-    console.log(player)
-
+    console.log(games[roomCode])
     socket.to(roomCode).emit("player-joined", player);
   });
 
@@ -74,8 +75,17 @@ io.on("connection", (socket) => {
   // Handle disconnect
   socket.on("disconnect", () => {
     console.log("Client disconnected:", socket.id);
-    // Optional: remove player from games
+
+    for (const [roomCode, game] of Object.entries(games)) {
+      const index = game.players.findIndex(p => p.id === socket.id);
+      if (index !== -1) {
+        const [removed] = game.players.splice(index, 1);
+        console.log(`Player ${removed.name} removed from room ${roomCode}`);
+        socket.to(roomCode).emit("player-left", removed);
+      }
+    }
   });
+
 });
 
 
