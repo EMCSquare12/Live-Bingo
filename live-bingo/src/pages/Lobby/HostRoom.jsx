@@ -60,16 +60,20 @@ function HostRoom() {
     }));
   };
 
-  const handleBlackout = () => {
-    const newArr = Array.from({ length: 25 }, (_, index) => index);
-    setHost((prev) => ({
-      ...prev,
-      cardWinningPattern: { ...prev.cardWinningPattern, index: newArr },
-    }));
-  };
-
-  const handleCustomize = () => {
-    setIsOpenModal(true);
+  const handleCardPattern = (value) => {
+    if (value === "Blackout") {
+      const newArr = Array.from({ length: 25 }, (_, index) => index);
+      setHost((prev) => ({
+        ...prev,
+        cardWinningPattern: {
+          ...prev.cardWinningPattern,
+          name: "Customize",
+          index: newArr,
+        },
+      }));
+    } else {
+      setIsOpenModal(true);
+    }
   };
 
   const handleOnchange = (value) => {
@@ -158,10 +162,10 @@ function HostRoom() {
           </label>
           <div className="flex flex-row items-center justify-center gap-2 w-fit">
             <input
-              onClick={handleBlackout}
+              onClick={(e) => handleCardPattern(e.target.value)}
               id="blackout"
               type="radio"
-              value="blackout"
+              value="Blackout"
               name="cardPattern"
               className="w-5 h-5 rounded-md outline-none"
             />
@@ -177,15 +181,15 @@ function HostRoom() {
               id="customize"
               type="radio"
               name="cardPattern"
-              value="customize"
+              value="Customize"
               className="w-5 h-5 rounded-md outline-none"
-              onClick={() => handleCustomize("customize")}
+              onClick={(e) => handleCardPattern(e.target.value)}
             />
             <label
               htmlFor="customize"
               className="text-sm font-normal cursor-pointer text-gray-50 w-fit font-inter"
             >
-              {host.cardWinningPattern.name}
+              {host.cardWinningPattern.name || "Customize"}
             </label>
           </div>
         </div>

@@ -17,7 +17,7 @@ const GameProvider = ({ children }) => {
     hostName: "",
     cardNumber: 1,
     cardWinningPattern: {
-      name: "Customize",
+      name: "",
       index: [],
     },
     players: [],
