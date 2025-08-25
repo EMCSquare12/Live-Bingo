@@ -20,14 +20,15 @@ io.on("connection", (socket) => {
       hostName,
       cardNumber,
       cardWinningPattern,
-      players: []
+      players: [],
+      hostId: socket.id, // ✅ keep track of who is the host
     };
     socket.join(roomCode);
 
-    // Only tell the creator their room was created
     socket.emit("room-created", roomCode, hostName);
     console.log(`Room created: ${roomCode}`, games[roomCode]);
   });
+
 
   const generateUniqueNumbers = (min, max, count) => {
     const uniqueNumbers = new Set();
@@ -53,23 +54,34 @@ io.on("connection", (socket) => {
       socket.emit("error", "Room does not exist");
       return;
     }
-    let cards = []
+
+    let cards = [];
     for (let i = 0; i < games[roomCode].cardNumber; i++) {
-      cards.push(generateCard())
+      cards.push(generateCard());
     }
+
     const player = { id: socket.id, name: playerName, cards };
+
     const exists = games[roomCode].players.find(p => p.id === socket.id);
     if (!exists) {
       games[roomCode].players.push(player);
     }
+
     socket.join(roomCode);
+
+    // confirmation for the player who joined
     socket.emit("joined-room", roomCode, player);
-    console.log(games[roomCode])
+
+    // tell everyone else that a new player joined (just the player object)
     socket.to(roomCode).emit("player-joined", player);
+
+    // ✅ send the full list only to the host
+    const hostId = games[roomCode].hostId;
+    if (hostId) {
+      io.to(hostId).emit("players", games[roomCode].players);
+    }
+    console.log(games);
   });
-
-
-
 
 
   // Handle disconnect
@@ -81,7 +93,12 @@ io.on("connection", (socket) => {
       if (index !== -1) {
         const [removed] = game.players.splice(index, 1);
         console.log(`Player ${removed.name} removed from room ${roomCode}`);
+
+        // notify players incrementally
         socket.to(roomCode).emit("player-left", removed);
+
+        // ✅ update host with the full list
+        io.to(game.hostId).emit("players", game.players);
       }
     }
   });
