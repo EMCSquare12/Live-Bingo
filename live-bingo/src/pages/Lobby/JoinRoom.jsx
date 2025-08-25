@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GameContext from "../../context/GameContext";
-import { io } from "socket.io-client";
+import { socket } from "../../server/socket";
 
 function JoinRoom() {
   const [isEmpty, setIsEmpty] = useState(false);
@@ -10,12 +10,6 @@ function JoinRoom() {
   const nameRef = useRef(null);
   const { setRoomCode, roomCode, player, setPlayer, setHost, host } =
     useContext(GameContext);
-  const socket = io("http://localhost:3001", {
-    autoConnect: true,
-    reconnection: true,
-  });
-
-  console.log(host.players);
 
   useEffect(() => {
     const handleClick = () => setIsEmpty(false);

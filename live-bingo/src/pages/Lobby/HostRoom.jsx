@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 import GameContext from "../../context/GameContext";
-import { io } from "socket.io-client";
+import { socket } from "../../server/socket";
 
 function HostRoom() {
   const { setIsOpenModal, host, setHost, setRoomCode, roomCode } =
@@ -13,10 +13,6 @@ function HostRoom() {
   const nameRef = useRef(null);
   const listRef = useRef(null);
   const navigate = useNavigate();
-  const socket = io("http://localhost:3001", {
-    autoConnect: true,
-    reconnection: true,
-  });
 
   const hostGame = () => {
     if (!host.hostName) {

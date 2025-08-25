@@ -1,7 +1,7 @@
 import { useContext, useEffect } from "react";
 import GameContext from "../../context/GameContext";
 import { useLocation } from "react-router-dom";
-import { io } from "socket.io-client";
+import { socket } from "../../server/socket";
 
 function Host() {
   const charStyle = {
@@ -18,10 +18,16 @@ function Host() {
   const { host, setHost, bingoNumbers, setBingoNumbers } =
     useContext(GameContext);
   const location = useLocation();
-  const socket = io("http://localhost:3001", {
-    autoConnect: true,
-    reconnection: true,
-  });
+
+  useEffect(() => {
+    socket.on("players", (players) => {
+      console.log(players);
+      setHost((prev) => ({ ...prev, players }));
+    });
+    return () => {
+      socket.off("players");
+    };
+  }, []);
 
   const handleRollNumber = () => {
     if (bingoNumbers.array.length === 0) return;
@@ -108,11 +114,14 @@ function Host() {
             </span>
           </h1>
           <ul className="flex flex-col gap-1 px-4 mt-2">
-            <li className="flex flex-row gap-6 text-sm font-normal text-gray-50 font-inter">
-              {host.players?.map((value, index) => {
-                <div>{value.name}</div>;
-              })}
-            </li>
+            {host.players.map((value, index) => (
+              <li
+                key={value.id || index}
+                className="flex flex-row gap-6 text-sm font-normal text-gray-50 font-inter"
+              >
+                {value.name}
+              </li>
+            ))}
           </ul>
         </div>
       </div>
