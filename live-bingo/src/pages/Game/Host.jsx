@@ -1,9 +1,11 @@
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import GameContext from "../../context/GameContext";
 import { useLocation } from "react-router-dom";
 import { socket } from "../../server/socket";
 
 function Host() {
+  const [showPlayerCard, setShowPlayerCard] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const charStyle = {
     char: ["B", "I", "N", "G", "O"],
     styles: [
@@ -117,15 +119,52 @@ function Host() {
             </span>
           </h1>
           <ul className="flex flex-col gap-1 px-4 mt-2">
-            {host.players.map((value, index) => (
-              <li
-                key={value.id || index}
-                className="flex flex-row gap-6 text-sm font-normal text-gray-50 font-inter"
-              >
-                <div>{value.name}</div>
-                <div>{value.result}</div>
-              </li>
-            ))}
+            {host.players.map((player, index) => {
+              const ranges = [
+                { min: 1, max: 15, color: "text-blue-500" },
+                { min: 16, max: 30, color: "text-red-500" },
+                { min: 31, max: 45, color: "text-gray-300" },
+                { min: 46, max: 60, color: "text-green-300" },
+                { min: 61, max: 75, color: "text-yellow-500" },
+              ];
+
+              const isOpen = selectedPlayer === index;
+
+              return (
+                <li
+                  onClick={() => setSelectedPlayer(isOpen ? null : index)}
+                  key={player.id || index}
+                  className="flex flex-row gap-6 text-xs font-normal border-b border-gray-500 cursor-pointer text-gray-50 font-inter"
+                >
+                  {/* Player Name */}
+                  <div className="w-24">{player.name}</div>
+
+                  {/* Toggle button */}
+                  <div
+                    className={`flex items-start justify-center h-fit -ml-3 w-fit`}
+                  >
+                    {player.result.length}
+                  </div>
+
+                  {/* Conditional render of result columns */}
+                  {isOpen &&
+                    ranges.map((range, i) => (
+                      <ul key={i} className="flex flex-col gap-2 ">
+                        {player.result
+                          .filter((num) => num >= range.min && num <= range.max)
+                          .map((num, j) => (
+                            <li
+                              key={j}
+                              className={`flex w-full ${range.color}`}
+                            >
+                              {num}
+                            </li>
+                          ))}
+                      </ul>
+                    ))}
+                </li>
+              );
+            })}
           </ul>
         </div>
       </div>
