@@ -11,6 +11,7 @@ const io = new Server(server, {
 
 app.use(cors());
 const games = {};
+let player = {};
 
 io.on("connection", (socket) => {
   // Create room
@@ -20,6 +21,7 @@ io.on("connection", (socket) => {
       hostName,
       cardNumber,
       cardWinningPattern,
+      numberCalled: [],
       players: [],
       hostId: socket.id, // ✅ keep track of who is the host
     };
@@ -47,7 +49,6 @@ io.on("connection", (socket) => {
     O: generateUniqueNumbers(61, 75, 5),
   });
 
-
   // Join room
   socket.on("join-room", (playerName, roomCode) => {
     if (!games[roomCode]) {
@@ -60,7 +61,19 @@ io.on("connection", (socket) => {
       cards.push(generateCard());
     }
 
-    const player = { id: socket.id, name: playerName, cards };
+    // Step 1: Find the card with most matches
+    const calledNumbers = games[roomCode].calledNumbers
+    const cardMatches = cards.map(card => {
+      const allValues = Object.values(card).flat();
+      const matchedValues = allValues.filter(num => calledNumbers?.includes(num));
+      return { card, matches: matchedValues.length };
+    });
+    const bestCard = cardMatches.reduce((a, b) => (a.matches >= b.matches ? a : b)).card;
+    const result = Object.values(bestCard)
+      .flat()
+      .filter(num => !calledNumbers?.includes(num));
+    player = { id: socket.id, name: playerName, cards, result };
+
 
     const exists = games[roomCode].players.find(p => p.id === socket.id);
     if (!exists) {
@@ -69,19 +82,22 @@ io.on("connection", (socket) => {
 
     socket.join(roomCode);
 
-    // confirmation for the player who joined
     socket.emit("joined-room", roomCode, player);
-
-    // tell everyone else that a new player joined (just the player object)
     socket.to(roomCode).emit("player-joined", player);
-
-    // ✅ send the full list only to the host
     const hostId = games[roomCode].hostId;
     if (hostId) {
       io.to(hostId).emit("players", games[roomCode].players);
     }
     console.log(games);
   });
+
+
+  socket.on("roll-number", (numberCalled, roomCode) => {
+    if (!numberCalled) return;
+    games[roomCode].numberCalled.push(numberCalled);
+    io.to(roomCode).emit("number-called", games[roomCode].numberCalled);
+  });
+
 
 
   // Handle disconnect
