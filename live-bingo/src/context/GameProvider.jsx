@@ -6,12 +6,12 @@ const GameProvider = ({ children }) => {
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [bingoNumbers, setBingoNumbers] = useState({
     array: [...Array(75)].map((_, i) => i + 1),
-    randomNumber: "X",
   });
   const [player, setPlayer] = useState({
     id: "",
     name: "",
     cards: [],
+    bestCard: [],
   });
   const [host, setHost] = useState({
     hostName: "",

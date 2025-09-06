@@ -15,7 +15,7 @@ function Host() {
     ],
   };
 
-  const { host, setHost, bingoNumbers, setBingoNumbers } =
+  const { host, setHost, bingoNumbers, setBingoNumbers, roomCode } =
     useContext(GameContext);
   const location = useLocation();
 
@@ -41,8 +41,11 @@ function Host() {
       randomNumber: randomNumber,
       array: removedNumber,
     }));
-    console.log(randomNumber);
   };
+  useEffect(() => {
+    socket.emit("roll-number", bingoNumbers.randomNumber, roomCode);
+    console.log(bingoNumbers.array, bingoNumbers.randomNumber);
+  }, [bingoNumbers.randomNumber]);
 
   return (
     <div className="flex flex-col items-center justify-between bg-gray-900">
@@ -67,7 +70,7 @@ function Host() {
               </div>
             )}
             <div className="w-full font-medium text-center text-9xl font-inter text-gray-50">
-              {bingoNumbers.randomNumber}
+              {bingoNumbers.randomNumber || "X"}
             </div>
           </div>
           <button
@@ -119,7 +122,8 @@ function Host() {
                 key={value.id || index}
                 className="flex flex-row gap-6 text-sm font-normal text-gray-50 font-inter"
               >
-                {value.name}
+                <div>{value.name}</div>
+                <div>{value.result}</div>
               </li>
             ))}
           </ul>

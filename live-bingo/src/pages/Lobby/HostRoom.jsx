@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef, useContext } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 import GameContext from "../../context/GameContext";
 import { socket } from "../../server/socket";
 
 function HostRoom() {
-  const { setIsOpenModal, host, setHost, setRoomCode, roomCode } =
+  const { setIsOpenModal, host, setHost, setRoomCode } =
     useContext(GameContext);
   const [isClickList, setIsClickList] = useState(false);
   const [isEmpty, setIsEmpty] = useState(false);

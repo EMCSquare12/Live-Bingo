@@ -1,6 +1,9 @@
 import { GiRoundStar } from "react-icons/gi";
 import { FiRefreshCw } from "react-icons/fi";
+import { socket } from "../server/socket";
+import { useEffect, useState } from "react";
 function BingoCard({ letterNumber, handleRefresh }) {
+  const [numberCalled, setNumberCalled] = useState([]);
   const charStyle = [
     "text-blue-500",
     "text-red-500",
@@ -8,6 +11,20 @@ function BingoCard({ letterNumber, handleRefresh }) {
     "text-green-500",
     "text-yellow-500",
   ];
+
+  useEffect(() => {
+    const handleNumberCalled = (numberCalled) => {
+      setNumberCalled(numberCalled);
+      console.log(numberCalled);
+    };
+
+    socket.on("number-called", handleNumberCalled);
+
+    return () => {
+      socket.off("number-called", handleNumberCalled);
+    };
+  }, []);
+
   return (
     <div className="relative flex flex-col gap-4 p-4 overflow-hidden bg-gray-600 rounded-lg shadow-lg w-fit h-fit">
       <div className="absolute top-0 right-0 flex flex-row overflow-hidden bg-white rounded-bl-lg h-fit w-fit bg-opacity-20">
@@ -40,7 +57,11 @@ function BingoCard({ letterNumber, handleRefresh }) {
             {letterNumber[char].map((num, rowIndex) => (
               <div
                 key={rowIndex}
-                className="flex items-center justify-center w-12 h-12 text-xl font-bold text-gray-600 rounded-md font-inter bg-gray-50"
+                className={`flex items-center justify-center w-12 h-12 text-xl font-bold  rounded-md font-inter ${
+                  numberCalled.includes(num)
+                    ? "text-gray-50 bg-gray-500"
+                    : "text-gray-600 bg-gray-50"
+                }`}
               >
                 {rowIndex === 2 && colIndex === 2 ? <GiRoundStar /> : num}
               </div>
