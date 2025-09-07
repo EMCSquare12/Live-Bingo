@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
 import GameContext from "../../context/GameContext";
-import { socket } from "../../server/socket";
+import { socket } from "../../utils/socket";
 
 function HostRoom() {
   const { setIsOpenModal, host, setHost, setRoomCode } =

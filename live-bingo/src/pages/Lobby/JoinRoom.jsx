@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GameContext from "../../context/GameContext";
-import { socket } from "../../server/socket";
+import { socket } from "../../utils/socket";
 
 function JoinRoom() {
   const [isEmpty, setIsEmpty] = useState(false);
