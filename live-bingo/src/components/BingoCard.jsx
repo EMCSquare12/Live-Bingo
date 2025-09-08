@@ -70,6 +70,8 @@ function BingoCard({ letterNumber, handleRefresh }) {
           </div>
         ))}
       </div>
+      //delete after
+      <div>Puts something Here</div>
     </div>
   );
 }
