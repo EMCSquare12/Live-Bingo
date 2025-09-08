@@ -18,6 +18,20 @@ function JoinRoom() {
       roomIdRef.current.addEventListener("click", handleClick);
     if (nameRef.current) nameRef.current.addEventListener("click", handleClick);
 
+    // Reconnect logic
+    const lastRoomCode = localStorage.getItem("roomCode");
+    const lastPlayerId = localStorage.getItem("playerId");
+
+    if (lastRoomCode && lastPlayerId) {
+        socket.emit("reconnect-player", lastRoomCode, lastPlayerId);
+        socket.once("reconnected", (roomCode, player) => {
+            setRoomCode(roomCode);
+            setPlayer(player);
+            navigate(`/${roomCode}/${player.id}`);
+        });
+    }
+
+
     return () => {
       if (roomIdRef.current)
         roomIdRef.current.removeEventListener("click", handleClick);
@@ -30,6 +44,8 @@ function JoinRoom() {
     socket.emit("join-room", player.name, roomCode);
     socket.once("joined-room", (roomCode, player) => {
       console.log("✅ joined-room received:", roomCode, player);
+      localStorage.setItem("roomCode", roomCode);
+      localStorage.setItem("playerId", player.id);
       setPlayer(player);
       setHost((prev) => ({ ...prev, players: [...prev.players, player] }));
       navigate(`/${roomCode}/${player.id}`);
