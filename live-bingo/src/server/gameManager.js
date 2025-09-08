@@ -1,46 +1,7 @@
 const { v4: uuidv4 } = require("uuid");
 const { generateCard } = require("./utils");
-const fs = require('fs');
-const path = require('path');
 
-const gamesFilePath = path.join(__dirname, 'games.json');
-let games = {}; // All active games will be loaded into here
-
-// --- Persistence Logic ---
-function loadGames() {
-    try {
-        if (fs.existsSync(gamesFilePath)) {
-            const data = fs.readFileSync(gamesFilePath, 'utf8');
-            games = JSON.parse(data);
-            console.log('✅ Previous game states loaded from games.json.');
-            
-            // On a server restart, all old connections are gone.
-            // Mark all players as disconnected until they reconnect.
-            Object.values(games).forEach(game => {
-                if (game.players) {
-                    game.players.forEach(p => p.disconnected = true);
-                }
-            });
-
-        }
-    } catch (error) {
-        console.error('Could not load game states:', error);
-        games = {};
-    }
-}
-
-function saveGames() {
-    try {
-        fs.writeFileSync(gamesFilePath, JSON.stringify(games, null, 2));
-    } catch (error) {
-        console.error('Could not save game states:', error);
-    }
-}
-
-// Load any existing games when the server first starts
-loadGames();
-// --- End Persistence Logic ---
-
+let games = {}; // All active games stored in memory
 
 function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
   const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
@@ -52,11 +13,11 @@ function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
     numberCalled: [],
     players: [],
     hostId: socket.id,
+    winner: null, // Add winner property to the game state
   };
 
   socket.join(roomCode);
   socket.emit("room-created", roomCode, socket.id);
-  saveGames(); // Save state
 
   console.log(`🎲 Room created: ${roomCode}`, games[roomCode]);
 }
@@ -70,103 +31,105 @@ function joinRoom(io, socket, playerName, roomCode) {
 
   const cards = Array.from({ length: game.cardNumber }, generateCard);
   const calledNumbers = game.numberCalled;
-  const cardMatches = cards.map((card) => {
-    const allValues = Object.values(card).flat();
-    const matched = allValues.filter((n) => calledNumbers.includes(n));
-    return { card, matches: matched.length };
-  });
-  const bestCard = cardMatches.reduce((a, b) => (a.matches >= b.matches ? a : b)).card;
-  const result = Object.values(bestCard)
-    .flat()
-    .filter((n) => !calledNumbers.includes(n));
-  
-  const player = { id: socket.id, name: playerName, cards, result, disconnected: false };
+
+  let result;
+  if (cards.length >= 2) {
+    const bestCard = cards.reduce((best, current) => {
+      const bestMatches = Object.values(best).flat().filter(num => calledNumbers.includes(num)).length;
+      const currentMatches = Object.values(current).flat().filter(num => calledNumbers.includes(num)).length;
+      return currentMatches >= bestMatches ? current : best;
+    });
+    const allNumbersOnBestCard = Object.values(bestCard).flat();
+    result = allNumbersOnBestCard.filter(n => !calledNumbers.includes(n));
+  } else if (cards.length === 1) {
+    const allNumbersOnCard = Object.values(cards[0]).flat();
+    result = allNumbersOnCard.filter(n => !calledNumbers.includes(n));
+  } else {
+    result = [];
+  }
+
+  const player = { id: socket.id, name: playerName, cards, result };
 
   game.players.push(player);
-  saveGames(); // Save state
 
   socket.join(roomCode);
   socket.emit("joined-room", roomCode, player);
   io.to(roomCode).emit("player-joined", player);
   if (game.hostId) {
-    io.to(game.hostId).emit("players", game.players.filter(p => !p.disconnected));
+    io.to(game.hostId).emit("players", game.players);
   }
-  console.log("📌 Updated games:", games);
-}
-
-function retrieveGameState(io, socket, { roomCode, userId }) {
-    const game = games[roomCode];
-    if (!game) {
-        socket.emit("error", "Game not found. Starting fresh.");
-        return;
-    }
-    
-    let userRole = null;
-    let userData = null;
-    let stateChanged = false;
-
-    if (game.hostId === userId) {
-        game.hostId = socket.id;
-        userRole = "host";
-        userData = { hostName: game.hostName };
-        stateChanged = true;
-        console.log(`Host ${game.hostName} reconnected to room ${roomCode} with new socket ID ${socket.id}`);
-    } else {
-        const player = game.players.find(p => p.id === userId);
-        if (player) {
-            player.id = socket.id;
-            player.disconnected = false;
-            userRole = "player";
-            userData = player;
-            stateChanged = true;
-            console.log(`Player ${player.name} reconnected to room ${roomCode} with new socket ID ${socket.id}`);
-        }
-    }
-    
-    if (userRole) {
-        if (stateChanged) saveGames(); // Save updated socket ID
-
-        socket.join(roomCode);
-        const activePlayers = game.players.filter(p => !p.disconnected);
-        const gameState = { ...game, players: activePlayers };
-        
-        socket.emit("game-state-retrieved", { gameState, yourData: userData });
-        socket.to(roomCode).emit("player-reconnected", userData);
-        io.to(game.hostId).emit("players", activePlayers);
-    } else {
-        socket.emit("error", "User not found in game. Starting fresh.");
-    }
 }
 
 function rollNumber(io, socket, numberCalled, roomCode) {
   const game = games[roomCode];
-  if (!game || !numberCalled) return;
+  // Prevent new numbers if a winner has been declared or game doesn't exist
+  if (!game || !numberCalled || game.winner) return;
 
-  game.numberCalled.push(numberCalled);
-  saveGames(); // Save state
+  if (!game.numberCalled.includes(numberCalled)) {
+    game.numberCalled.push(numberCalled);
+  }
+
+  const winningPatternIndices = game.cardWinningPattern.index;
+
+  // Check for a winner
+  for (const player of game.players) {
+    for (const card of player.cards) {
+      const cardNumbers = [...card.B, ...card.I, ...card.N, ...card.G, ...card.O];
+
+      const requiredNumbers = winningPatternIndices.map(index => cardNumbers[index]);
+      const isWinner = requiredNumbers.every(num => game.numberCalled.includes(num));
+
+      if (isWinner) {
+        game.winner = player.name; // Set winner to stop the game
+        console.log(`🎉 Winner found: ${player.name} in room ${roomCode}`);
+        io.to(roomCode).emit('player-won', { winnerName: player.name });
+        return; // Exit function once winner is found
+      }
+    }
+  }
+
+  // If no winner, update player results for the host view
+  game.players.forEach(player => {
+    if (player.cards.length >= 2) {
+      const bestCard = player.cards.reduce((best, current) => {
+        const bestMatches = Object.values(best).flat().filter(num => game.numberCalled.includes(num)).length;
+        const currentMatches = Object.values(current).flat().filter(num => game.numberCalled.includes(num)).length;
+        return currentMatches >= bestMatches ? current : best;
+      });
+      const allNumbersOnBestCard = Object.values(bestCard).flat();
+      player.result = allNumbersOnBestCard.filter(n => !game.numberCalled.includes(n));
+    } else if (player.cards.length === 1) {
+      const allNumbersOnCard = Object.values(player.cards[0]).flat();
+      player.result = allNumbersOnCard.filter(n => !game.numberCalled.includes(n));
+    } else {
+      player.result = [];
+    }
+  });
+
   io.to(roomCode).emit("number-called", game.numberCalled);
+
+  if (game.hostId) {
+    io.to(game.hostId).emit("players", game.players);
+  }
 }
 
 function handleDisconnect(io, socket) {
   console.log("❌ Client disconnected:", socket.id);
-  let stateChanged = false;
   for (const [roomCode, game] of Object.entries(games)) {
-    const player = game.players.find((p) => p.id === socket.id && !p.disconnected);
-    if (player) {
-      player.disconnected = true;
-      stateChanged = true;
-      console.log(`🚪 Player ${player.name} disconnected from room ${roomCode}. Data preserved.`);
-      
-      const activePlayers = game.players.filter(p => !p.disconnected);
-      io.to(game.hostId).emit("players", activePlayers);
-      io.to(roomCode).emit("player-disconnected", player.id);
+    const playerIndex = game.players.findIndex((p) => p.id === socket.id);
+    if (playerIndex !== -1) {
+      const removedPlayer = game.players.splice(playerIndex, 1);
+      console.log(`🚪 Player ${removedPlayer[0].name} removed from room ${roomCode}.`);
+      io.to(roomCode).emit("player-disconnected", socket.id);
+      io.to(game.hostId).emit("players", game.players);
     }
-    
+
     if (game.hostId === socket.id) {
-        console.log(`Host of room ${roomCode} disconnected. Host ID is now stale.`);
+      console.log(`Host of room ${roomCode} disconnected. The room will be removed.`);
+      delete games[roomCode];
+      io.to(roomCode).emit("error", "Host disconnected. Game over.");
     }
   }
-  if (stateChanged) saveGames(); // Save state
 }
 
-module.exports = { createRoom, joinRoom, rollNumber, handleDisconnect, retrieveGameState };
+module.exports = { createRoom, joinRoom, rollNumber, handleDisconnect };
