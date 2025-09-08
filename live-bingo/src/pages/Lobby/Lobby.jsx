@@ -8,8 +8,8 @@ function Lobby() {
   const { isOpenModal } = useContext(GameContext);
   return (
     <>
-      <div className="grid w-full min-h-screen h-full grid-cols-[40%_60%] bg-gray-50 relative">
-        <div className="relative flex justify-between w-full h-full bg-gray-800">
+      <div className="grid w-full min-h-screen h-full grid-cols-1 md:grid-cols-[40%_60%] bg-gray-50 relative">
+        <div className="relative justify-between hidden w-full h-full bg-gray-800 md:flex">
           <div className="absolute top-0 left-0 flex justify-between w-full px-2 py-2 bg-gray-800 h-fit md:px-8">
             <Logo />
           </div>

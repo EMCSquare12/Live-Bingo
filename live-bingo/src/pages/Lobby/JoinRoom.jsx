@@ -8,7 +8,7 @@ function JoinRoom() {
   const navigate = useNavigate();
   const roomIdRef = useRef(null);
   const nameRef = useRef(null);
-  const { setRoomCode, roomCode, player, setPlayer, setHost, host } =
+  const { setRoomCode, roomCode, player, setPlayer, setHost } =
     useContext(GameContext);
 
   useEffect(() => {
@@ -17,20 +17,6 @@ function JoinRoom() {
     if (roomIdRef.current)
       roomIdRef.current.addEventListener("click", handleClick);
     if (nameRef.current) nameRef.current.addEventListener("click", handleClick);
-
-    // Reconnect logic
-    const lastRoomCode = localStorage.getItem("roomCode");
-    const lastPlayerId = localStorage.getItem("playerId");
-
-    if (lastRoomCode && lastPlayerId) {
-        socket.emit("reconnect-player", lastRoomCode, lastPlayerId);
-        socket.once("reconnected", (roomCode, player) => {
-            setRoomCode(roomCode);
-            setPlayer(player);
-            navigate(`/${roomCode}/${player.id}`);
-        });
-    }
-
 
     return () => {
       if (roomIdRef.current)
@@ -41,11 +27,14 @@ function JoinRoom() {
   }, []);
 
   const handleJoin = () => {
+    if (!player.name || !roomCode) {
+      setIsEmpty(true);
+      return;
+    }
     socket.emit("join-room", player.name, roomCode);
     socket.once("joined-room", (roomCode, player) => {
       console.log("✅ joined-room received:", roomCode, player);
-      localStorage.setItem("roomCode", roomCode);
-      localStorage.setItem("playerId", player.id);
+      setRoomCode(roomCode);
       setPlayer(player);
       setHost((prev) => ({ ...prev, players: [...prev.players, player] }));
       navigate(`/${roomCode}/${player.id}`);
@@ -53,8 +42,8 @@ function JoinRoom() {
   };
 
   return (
-    <div className="flex justify-between w-full h-full bg-gray-900 over">
-      <section className="flex flex-col gap-4 px-16 mt-32 mb-16 w-fit h-fit">
+    <div className="flex justify-center w-full h-full bg-gray-900 md:justify-start">
+      <section className="flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 md:mt-32 w-fit h-fit">
         <h1 className="text-lg font-medium md:text-2xl font-inter text-gray-50">
           Join a game
         </h1>
@@ -94,7 +83,7 @@ function JoinRoom() {
         </div>
         {isEmpty && (
           <div className="flex justify-center w-full -mt-6 text-sm text-red-500 font-inter">
-            Please enter room code
+            Please enter room code and name
           </div>
         )}
         <button

@@ -84,8 +84,8 @@ function HostRoom() {
   };
 
   return (
-    <div className="flex justify-start w-full h-full bg-gray-900 over">
-      <section className="flex flex-col gap-4 px-16 mt-32 mb-16 w-fit h-fit">
+    <div className="flex justify-center w-full h-full bg-gray-900 md:justify-start">
+      <section className="flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 md:mt-32 w-fit h-fit">
         <h1 className="text-lg font-medium md:text-2xl font-inter text-gray-50">
           Host a game
         </h1>

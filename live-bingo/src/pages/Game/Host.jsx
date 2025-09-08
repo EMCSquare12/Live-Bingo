@@ -93,24 +93,29 @@ function Host() {
     }
   };
 
+  // Sort players by the length of their result array (ascending)
+  const sortedPlayers = [...host.players].sort(
+    (a, b) => a.result.length - b.result.length
+  );
+
   return (
     <div className="flex flex-col items-center justify-between bg-gray-900">
       {/* Header */}
-      <div className="flex flex-row justify-start w-full gap-5 px-10">
-        <h1 className="py-5 ml-5 font-medium text-md text-gray-300 font-inter w-fit">
+      <div className="flex flex-col items-center w-full gap-2 px-4 md:flex-row md:justify-start md:gap-5 md:px-10">
+        <h1 className="py-5 ml-5 font-medium text-gray-300 text-md font-inter w-fit">
           Host:{" "}
           <span className="text-gray-50">{host.hostName?.toUpperCase()}</span>
         </h1>
-        <h1 className="py-5 flex flex-row gap-2  font-medium text-md text-gray-300 font-inter w-fit">
+        <h1 className="flex flex-row gap-2 py-5 font-medium text-gray-300 text-md font-inter w-fit">
           Room Code:{" "}
           <button
             onClick={handleCopy}
-            className="flex flex-row items-center gap-1 text-gray-50 hover:text-gray-300 relative "
+            className="relative flex flex-row items-center gap-1 text-gray-50 hover:text-gray-300 "
           >
             {location.pathname.slice(1)}
             <FaCopy className="w-4 h-4" />
             {copied && (
-              <span className="w-fit absolute -top-6 left-0 text-xs text-gray-300 bg-gray-600 bg-opacity-50 p-1 rounded-md">
+              <span className="absolute left-0 p-1 text-xs text-gray-300 bg-gray-600 bg-opacity-50 rounded-md w-fit -top-6">
                 Copied
               </span>
             )}
@@ -119,19 +124,19 @@ function Host() {
       </div>
 
       {/* Main grid */}
-      <div className="grid w-full h-auto grid-cols-[1fr_1.5fr_1fr] gap-10 px-10 pb-10 items-start">
+      <div className="grid w-full h-auto grid-cols-1 lg:grid-cols-[1fr_1.5fr_1fr] gap-10 px-4 md:px-10 pb-10 items-start">
         {/* Current roll */}
-        <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 items-center justify-between p-10 shadow-lg">
+        <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 items-center justify-between p-4 md:p-10 shadow-lg">
           <div className="flex flex-col items-center justify-center gap-2">
             {currentCol && (
               <div
-                className={`flex items-center justify-center text-4xl font-bold ${currentCol.bgColor} rounded-lg text-gray-50 w-14 h-14 font-inter`}
+                className={`flex items-center justify-center text-3xl md:text-4xl font-bold ${currentCol.bgColor} rounded-lg text-gray-50 w-12 h-12 md:w-14 md:h-14 font-inter`}
               >
                 {currentCol.label}
               </div>
             )}
 
-            <div className="w-full font-medium text-center text-9xl font-inter text-gray-50">
+            <div className="w-full font-medium text-center text-8xl md:text-9xl font-inter text-gray-50">
               {bingoNumbers.randomNumber ?? "X"}
             </div>
           </div>
@@ -145,15 +150,15 @@ function Host() {
         </div>
 
         {/* Board */}
-        <div className="flex flex-col items-start justify-start w-full p-10 bg-gray-600 shadow-lg h-fit rounded-xl">
+        <div className="flex flex-col items-start justify-start w-full p-4 bg-gray-600 shadow-lg md:p-10 h-fit rounded-xl">
           {columns.map((col, charIndex) => (
             <div
               key={col.label}
-              className="flex flex-row items-start justify-center w-full gap-5 h-fit"
+              className="flex flex-row items-start justify-center w-full gap-2 md:gap-5 h-fit"
             >
               {/* Column Label */}
               <div
-                className={`flex items-center justify-center w-10 h-10 mt-2 text-lg font-bold ${col.bgColor} rounded-md text-gray-50 font-inter`}
+                className={`flex items-center justify-center w-8 h-8 mt-2 text-base md:text-lg font-bold ${col.bgColor} rounded-md text-gray-50 font-inter`}
               >
                 {col.label}
               </div>
@@ -167,7 +172,7 @@ function Host() {
                   return (
                     <div
                       key={number}
-                      className={`flex items-center justify-center text-sm font-medium text-center text-gray-50 rounded-md w-7 h-7 ${
+                      className={`flex items-center justify-center text-xs md:text-sm font-medium text-center text-gray-50 rounded-md w-6 h-6 md:w-7 md:h-7 ${
                         isAvailable ? "bg-gray-500" : col.bgColor
                       }`}
                     >
@@ -182,29 +187,29 @@ function Host() {
 
         {/* Players */}
         <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg">
-          <div className="flex flex-row justify-start items-center">
-            <h1 className="p-2 font-medium font-inter text-md text-gray-300 w-fit">
+          <div className="flex flex-row items-center justify-start">
+            <h1 className="p-2 font-medium text-gray-300 font-inter text-md w-fit">
               Players:{" "}
             </h1>{" "}
-            <h1 className=" bg-gray-500 font-medium  text-md text-gray-300 w-6 flex items-center justify-center h-6 rounded">
+            <h1 className="flex items-center justify-center w-6 h-6 font-medium text-gray-300 bg-gray-500 rounded text-md">
               {host.players.length}
             </h1>
           </div>
           <ul className="flex flex-col gap-1 px-4 mt-2">
-            {host.players.map((player, index) => {
+            {sortedPlayers.map((player, index) => {
               const isOpen = selectedPlayer === index;
 
               return (
                 <li
                   onClick={() => setSelectedPlayer(isOpen ? null : index)}
                   key={player.id || index}
-                  className="flex flex-row gap-6 p-1 rounded-md text-xs font-normal border-b border-gray-500 cursor-pointer text-gray-300 font-inter hover:bg-gray-500"
+                  className="flex flex-row gap-6 p-1 text-xs font-normal text-gray-300 border-b border-gray-500 rounded-md cursor-pointer font-inter hover:bg-gray-500"
                 >
                   {/* Player Name */}
                   <div className="w-24">{player.name}</div>
 
                   {/* Result Count */}
-                  <div className="flex items-start justify-center h-fit -ml-3 w-fit">
+                  <div className="flex items-start justify-center -ml-3 h-fit w-fit">
                     {player.result.length}
                   </div>
 

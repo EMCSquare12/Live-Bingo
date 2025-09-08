@@ -3,7 +3,7 @@ import BingoCard from "../../components/BingoCard";
 import GameContext from "../../context/GameContext";
 
 function Player() {
-  const { player, bingoNumbers, host } = useContext(GameContext);
+  const { player, host } = useContext(GameContext);
   const [isRefreshed, setIsRefreshed] = useState(false);
   const cards = player.cards ?? [];
   const last = host.numberCalled.at(-1);
@@ -42,14 +42,13 @@ function Player() {
   ];
   const col = columns.find((c) => last >= c.range[0] && last <= c.range[1]);
 
-  console.log(bingoNumbers.randomNumber);
   return (
-    <div className="grid w-full h-full min-h-screen grid-cols-[40%_60%] bg-gray-900 items-center justify-start ">
-      <div className="bg-gray-800 h-full p-10 flex flex-col gap-6">
-        <h1 className="font-medium text-md text-gray-300 font-inter -mt-5">
+    <div className="grid w-full h-full min-h-screen grid-cols-[40%_60%] bg-gray-900 items-start justify-start ">
+      <div className="flex flex-col h-full gap-6 p-10 bg-gray-800">
+        <h1 className="-mt-5 font-medium text-gray-300 text-md font-inter">
           Player: {player.name}
         </h1>
-        <div className="flex flex-row items-center justify-center gap-6 border-t border-b border-gray-500 py-5">
+        <div className="flex flex-row items-center justify-center gap-6 py-5 border-t border-b border-gray-500">
           {last && col && (
             <div
               className={`flex items-center justify-center font-bold text-7xl ${col.bgColor}  rounded-lg text-gray-50 w-24 h-24 font-inter`}
@@ -58,15 +57,15 @@ function Player() {
             </div>
           )}
 
-          <div className="w-fit font-medium text-center text-9xl font-inter text-gray-50">
+          <div className="font-medium text-center w-fit text-9xl font-inter text-gray-50">
             {last ?? "X"}
           </div>
         </div>
         <div>
-          <h1 className="font-medium flex flex-col text-md text-gray-300 font-inter -mt-3">
+          <h1 className="flex flex-col -mt-3 font-medium text-gray-300 text-md font-inter">
             Number Called:
           </h1>
-          <ul className="flex flex-col gap-2 w-full bg-gray-700 rounded-md p-1 mt-3">
+          <ul className="flex flex-col w-full gap-2 p-1 mt-3 bg-gray-700 rounded-md">
             {columns.map(({ label, range, textColor, bgColor }) => (
               <li key={label}>
                 <ul className="flex flex-row items-center justify-start gap-2">
@@ -92,7 +91,7 @@ function Player() {
           </ul>
         </div>
       </div>
-      <div className="w-full h-screen flex items-start justify-center py-10 overflow-y-auto ">
+      <div className="flex items-start justify-center w-full h-screen py-10 overflow-y-auto ">
         <div
           className={`${
             cards.length < 2
