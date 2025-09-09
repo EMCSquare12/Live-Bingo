@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useContext } from "react";
+import { useState, useEffect, useRef, useContext, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IoIosArrowDown } from "react-icons/io";
 import { IoIosArrowUp } from "react-icons/io";
@@ -9,27 +9,46 @@ function HostRoom() {
   const { setIsOpenModal, host, setHost, setRoomCode } =
     useContext(GameContext);
   const [isClickList, setIsClickList] = useState(false);
-  const [isEmpty, setIsEmpty] = useState(false);
+  const [error, setError] = useState("");
   const nameRef = useRef(null);
   const listRef = useRef(null);
   const navigate = useNavigate();
 
-  const hostGame = () => {
-    if (!host.hostName) {
-      setIsEmpty(true);
+  const hostGame = useCallback(() => {
+    if (!host.hostName.trim()) {
+      setError("Please enter your name.");
       return;
     }
+    if (host.cardWinningPattern.index.length === 0) {
+      setError("Please select a winning pattern.");
+      return;
+    }
+    setError(""); // Clear error if validation passes
     socket.emit(
       "create-room",
       host.hostName,
       host.cardNumber,
       host.cardWinningPattern
     );
-    socket.on("room-created", (roomCode) => {
+    socket.once("room-created", (roomCode) => {
       setRoomCode(roomCode);
-      navigate(`/${roomCode}`);
+      // Navigate with state to indicate the user is the host
+      navigate(`/${roomCode}`, { state: { isHost: true } });
     });
-  };
+  }, [host, navigate, setRoomCode]);
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        hostGame();
+      }
+    };
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [hostGame]);
 
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
@@ -37,7 +56,7 @@ function HostRoom() {
     }
   };
   useEffect(() => {
-    const handleClick = () => setIsEmpty(false);
+    const handleClick = () => setError("");
     document.addEventListener("mousedown", handleClickOutside);
 
     if (nameRef.current) {
@@ -61,13 +80,14 @@ function HostRoom() {
   };
 
   const handleCardPattern = (value) => {
+    setError("");
     if (value === "Blackout") {
       const newArr = Array.from({ length: 25 }, (_, index) => index);
       setHost((prev) => ({
         ...prev,
         cardWinningPattern: {
           ...prev.cardWinningPattern,
-          name: "Customize",
+          name: "Blackout",
           index: newArr,
         },
       }));
@@ -77,6 +97,7 @@ function HostRoom() {
   };
 
   const handleOnchange = (value) => {
+    if(error) setError("");
     setHost((prev) => ({
       ...prev,
       hostName: value,
@@ -165,8 +186,8 @@ function HostRoom() {
               onClick={(e) => handleCardPattern(e.target.value)}
               id="blackout"
               type="radio"
-              value="Blackout"
               name="cardPattern"
+              value="Blackout"
               className="w-5 h-5 rounded-md outline-none"
             />
             <label
@@ -193,9 +214,9 @@ function HostRoom() {
             </label>
           </div>
         </div>
-        {isEmpty && (
+        {error && (
           <div className="flex justify-center w-full -mt-6 text-sm text-red-500 font-inter">
-            Please enter host name
+            {error}
           </div>
         )}
         <button
@@ -215,3 +236,4 @@ function HostRoom() {
   );
 }
 export default HostRoom;
+

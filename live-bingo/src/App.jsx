@@ -4,7 +4,7 @@ import Game from "./pages/Game/Game";
 import JoinRoom from "./pages/Lobby/JoinRoom";
 import HostRoom from "./pages/Lobby/HostRoom";
 import Player from "./pages/Game/Player";
-import Host from "./pages/Game/Host";
+import HostGuard from "./pages/Game/HostGuard";
 import GameProvider from "./context/GameProvider";
 
 function App() {
@@ -21,7 +21,7 @@ function App() {
       path: "/:roomCode",
       element: <Game />,
       children: [
-        { index: true, element: <Host /> },
+        { index: true, element: <HostGuard /> }, // Use the guard
         { path: ":playerId", element: <Player /> }, // dynamic playerId
       ],
     },

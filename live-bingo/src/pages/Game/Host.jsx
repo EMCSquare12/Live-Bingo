@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useCallback } from "react";
 import GameContext from "../../context/GameContext";
 import { useLocation } from "react-router-dom";
 import { socket } from "../../utils/socket";
@@ -49,9 +49,9 @@ function Host() {
       setHost((prev) => ({ ...prev, players }));
     });
     return () => socket.off("players");
-  }, []);
+  }, [setHost]);
 
-  const handleRollNumber = () => {
+  const handleRollNumber = useCallback(() => {
     if (bingoNumbers.array.length === 0) return;
 
     const randomNumber =
@@ -65,13 +65,31 @@ function Host() {
       randomNumber,
       array: removedNumber,
     }));
-  };
+  }, [bingoNumbers.array, setBingoNumbers]);
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        // Do not roll if no players are present
+        if (host.players.length > 1) {
+          handleRollNumber();
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyPress);
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [handleRollNumber, host.players.length]);
 
   useEffect(() => {
     if (bingoNumbers.randomNumber) {
       socket.emit("roll-number", bingoNumbers.randomNumber, roomCode);
     }
-  }, [bingoNumbers.randomNumber]);
+  }, [bingoNumbers.randomNumber, roomCode]);
 
   const currentCol = bingoNumbers.randomNumber
     ? columns.find(
@@ -81,7 +99,7 @@ function Host() {
       )
     : null;
 
-  const handleCopy = async (code) => {
+  const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(location.pathname.slice(1));
       setCopied(true);
@@ -143,7 +161,8 @@ function Host() {
 
           <button
             onClick={handleRollNumber}
-            className="flex items-center justify-center px-6 py-2 mt-6 font-medium bg-blue-600 rounded-md text-gray-50 font-inter hover:bg-blue-700"
+            disabled={host.players.length <= 1}
+            className="flex items-center justify-center px-6 py-2 mt-6 font-medium bg-blue-600 rounded-md text-gray-50 font-inter hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed"
           >
             Roll Number
           </button>
