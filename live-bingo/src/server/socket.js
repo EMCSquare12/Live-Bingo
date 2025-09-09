@@ -1,4 +1,4 @@
-const { createRoom, joinRoom, rollNumber, handleDisconnect } = require("./gameManager");
+const { createRoom, joinRoom, rollNumber, handleDisconnect, newGame, verifyHost } = require("./gameManager");
 
 function registerSocketHandlers(io) {
     io.on("connection", (socket) => {
@@ -11,9 +11,17 @@ function registerSocketHandlers(io) {
         socket.on("join-room", (playerName, roomCode) => {
             joinRoom(io, socket, playerName, roomCode);
         });
+        
+        socket.on("verify-host", (roomCode) => {
+            verifyHost(socket, roomCode);
+        });
 
         socket.on("roll-number", (numberCalled, roomCode) => {
             rollNumber(io, socket, numberCalled, roomCode);
+        });
+
+        socket.on("new-game", (roomCode) => {
+            newGame(io, roomCode);
         });
 
         socket.on("disconnect", () => {
