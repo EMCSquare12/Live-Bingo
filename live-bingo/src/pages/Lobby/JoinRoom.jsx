@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useContext, useCallback } from "react";
+import { useState, useEffect, useRef, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import GameContext from "../../context/GameContext";
 import { socket } from "../../utils/socket";
 
 function JoinRoom() {
-  const [error, setError] = useState("");
+  const [isEmpty, setIsEmpty] = useState(false);
   const navigate = useNavigate();
   const roomIdRef = useRef(null);
   const nameRef = useRef(null);
@@ -12,33 +12,25 @@ function JoinRoom() {
     useContext(GameContext);
 
   useEffect(() => {
-    const handleClick = () => setError("");
-    
-    const nameInput = nameRef.current;
-    const roomInput = roomIdRef.current;
+    const handleClick = () => setIsEmpty(false);
 
-    if (roomInput) roomInput.addEventListener("click", handleClick);
-    if (nameInput) nameInput.addEventListener("click", handleClick);
-    
-    const handleError = (errorMessage) => {
-        setError(errorMessage);
-    };
-    socket.on('error', handleError);
-
+    if (roomIdRef.current)
+      roomIdRef.current.addEventListener("click", handleClick);
+    if (nameRef.current) nameRef.current.addEventListener("click", handleClick);
 
     return () => {
-      if (roomInput) roomInput.removeEventListener("click", handleClick);
-      if (nameInput) nameInput.removeEventListener("click", handleClick);
-      socket.off('error', handleError);
+      if (roomIdRef.current)
+        roomIdRef.current.removeEventListener("click", handleClick);
+      if (nameRef.current)
+        nameRef.current.removeEventListener("click", handleClick);
     };
   }, []);
 
-  const handleJoin = useCallback(() => {
-    if (!player.name.trim() || !roomCode.trim()) {
-      setError("Please enter room code and name.");
+  const handleJoin = () => {
+    if (!player.name || !roomCode) {
+      setIsEmpty(true);
       return;
     }
-    setError("");
     socket.emit("join-room", player.name, roomCode);
     socket.once("joined-room", (roomCode, player) => {
       console.log("✅ joined-room received:", roomCode, player);
@@ -47,22 +39,7 @@ function JoinRoom() {
       setHost((prev) => ({ ...prev, players: [...prev.players, player] }));
       navigate(`/${roomCode}/${player.id}`);
     });
-  }, [player.name, roomCode, navigate, setRoomCode, setPlayer, setHost]);
-
-  useEffect(() => {
-    const handleKeyPress = (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        handleJoin();
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyPress);
-
-    return () => {
-      window.removeEventListener("keydown", handleKeyPress);
-    };
-  }, [handleJoin]);
+  };
 
   return (
     <div className="flex justify-center w-full h-full bg-gray-900 md:justify-start">
@@ -79,10 +56,7 @@ function JoinRoom() {
           </label>
           <input
             value={roomCode}
-            onChange={(e) => {
-                setRoomCode(e.target.value);
-                if (error) setError("");
-            }}
+            onChange={(e) => setRoomCode(e.target.value)}
             ref={roomIdRef}
             id="roomCode"
             type="text"
@@ -98,19 +72,18 @@ function JoinRoom() {
           </label>
           <input
             value={player.name}
-            onChange={(e) => {
-                setPlayer((prev) => ({ ...prev, name: e.target.value }));
-                if (error) setError("");
-            }}
+            onChange={(e) =>
+              setPlayer((prev) => ({ ...prev, name: e.target.value }))
+            }
             ref={nameRef}
             id="name"
             type="text"
             className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter focus:ring-2 focus:ring-blue-500 w-72"
           />
         </div>
-        {error && (
+        {isEmpty && (
           <div className="flex justify-center w-full -mt-6 text-sm text-red-500 font-inter">
-            {error}
+            Please enter room code and name
           </div>
         )}
         <button

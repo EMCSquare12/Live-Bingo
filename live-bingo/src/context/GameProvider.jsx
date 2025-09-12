@@ -1,22 +1,22 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import GameContext from "./GameContext";
 import { socket } from "../utils/socket";
 
-const initialState = {
-  roomCode: "",
-  isOpenModal: false,
-  winner: null,
-  bingoNumbers: {
+const GameProvider = ({ children }) => {
+  const [roomCode, setRoomCode] = useState("");
+  const [isOpenModal, setIsOpenModal] = useState(false);
+  const [winner, setWinner] = useState(null);
+  const [bingoNumbers, setBingoNumbers] = useState({
     array: [...Array(75)].map((_, i) => i + 1),
     randomNumber: null,
-  },
-  player: {
+  });
+  const [player, setPlayer] = useState({
     id: "",
     name: "",
     cards: [],
     result: [],
-  },
-  host: {
+  });
+  const [host, setHost] = useState({
     hostName: "",
     cardNumber: 1,
     numberCalled: [],
@@ -25,70 +25,39 @@ const initialState = {
       index: [],
     },
     players: [],
-  },
-};
-
-const GameProvider = ({ children }) => {
-  const [game, setGame] = useState(initialState);
-
-  // Custom setters for individual state properties, wrapped in useCallback for stability
-  const setRoomCode = useCallback((roomCode) => setGame(prev => ({ ...prev, roomCode })), []);
-  const setIsOpenModal = useCallback((isOpen) => setGame(prev => ({ ...prev, isOpenModal: isOpen })), []);
-  const setWinner = useCallback((winner) => setGame(prev => ({ ...prev, winner })), []);
-  const setBingoNumbers = useCallback((updater) => setGame(prev => ({ ...prev, bingoNumbers: typeof updater === 'function' ? updater(prev.bingoNumbers) : updater })), []);
-  const setPlayer = useCallback((updater) => setGame(prev => ({ ...prev, player: typeof updater === 'function' ? updater(prev.player) : updater })), []);
-  const setHost = useCallback((updater) => setGame(prev => ({ ...prev, host: typeof updater === 'function' ? updater(prev.host) : updater })), []);
-  
-  const resetGame = useCallback(() => {
-    setGame(initialState);
-  }, []);
-
-  const handlePlayerWon = useCallback(({ winnerName, winnerId }) => {
-    setGame(prev => ({ ...prev, winner: { name: winnerName, id: winnerId } }));
-  }, []);
-
-  const handleGameReset = useCallback(() => {
-    setGame(prev => ({
-      ...prev,
-      winner: null,
-      bingoNumbers: {
-        array: [...Array(75)].map((_, i) => i + 1),
-        randomNumber: null,
-      },
-      host: {
-        ...prev.host,
-        numberCalled: [],
-      }
-    }));
-  }, []);
+  });
 
   useEffect(() => {
+    const handlePlayerWon = ({ winnerName }) => {
+      setWinner(winnerName);
+    };
+
     socket.on("player-won", handlePlayerWon);
-    socket.on("game-reset", handleGameReset);
 
     return () => {
       socket.off("player-won", handlePlayerWon);
-      socket.off("game-reset", handleGameReset);
     };
-  }, [handlePlayerWon, handleGameReset]); // Dependencies on stable handlers
+  }, []);
 
   const value = useMemo(
     () => ({
-      ...game, // Spread all game state properties
-      // Provide setters and reset function
-      setRoomCode,
+      isOpenModal,
       setIsOpenModal,
-      setWinner,
-      setBingoNumbers,
-      setPlayer,
+      host,
       setHost,
-      resetGame,
+      bingoNumbers,
+      setBingoNumbers,
+      player,
+      setPlayer,
+      roomCode,
+      setRoomCode,
+      winner,
+      setWinner,
     }),
-    [game, resetGame, setRoomCode, setIsOpenModal, setWinner, setBingoNumbers, setPlayer, setHost]
+    [isOpenModal, host, roomCode, player, bingoNumbers, winner]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };
 
 export default GameProvider;
-

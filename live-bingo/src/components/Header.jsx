@@ -3,23 +3,25 @@ import { MdVolumeOff } from "react-icons/md";
 import { FaCaretDown } from "react-icons/fa";
 import { FaCaretUp } from "react-icons/fa";
 import Logo from "./Logo";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
 import WinningPatternCard from "./WinningPatternCard";
 import GameContext from "../context/GameContext";
-import { socket } from "../utils/socket";
 
 function Header() {
   const navigate = useNavigate();
-  const { roomCode, playerId } = useParams();
-  const isHost = !playerId;
   const [isClickSound, setIsClickSound] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
-  const { setIsOpenModal, isOpenModal, host } =
+  const { setIsOpenModal, isOpenModal, setBingoNumbers, host } =
     useContext(GameContext);
 
   const handleNewGame = () => {
-    socket.emit("new-game", roomCode);
+    const newBingoNumbers = [...Array(75)].map((_, i) => i + 1);
+    setBingoNumbers((prev) => ({
+      ...prev,
+      array: newBingoNumbers,
+      randomNumber: "X",
+    }));
   };
 
   return (
@@ -58,14 +60,12 @@ function Header() {
               <MdVolumeUp className="text-xl" />
             )}
           </button>
-          {isHost && (
-            <button
-              onClick={handleNewGame}
-              className="px-3 font-medium text-gray-100 bg-blue-600 rounded-md text-md font-inter hover:bg-blue-700"
-            >
-              New game
-            </button>
-          )}
+          <button
+            // onClick={handleNewGame}
+            className="px-3 font-medium text-gray-100 bg-blue-600 rounded-md text-md font-inter hover:bg-blue-700"
+          >
+            New game
+          </button>
           <button
             onClick={() => {
               navigate("/");
