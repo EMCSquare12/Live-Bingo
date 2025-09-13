@@ -4,22 +4,29 @@ import Logo from "./Logo";
 import { useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
 import WinningPatternCard from "./WinningPatternCard";
-import GameContext from "../context/GameContext.js"; // Corrected file path
+import GameContext from "../context/GameContext.js";
+import { socket } from "../utils/socket.js";
 
 function Header() {
   const navigate = useNavigate();
   const [isClickSound, setIsClickSound] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
-  const { setIsOpenModal, isOpenModal, setBingoNumbers, host } =
-    useContext(GameContext);
+  const { setIsOpenModal, isOpenModal, host, resetGame, roomCode } =
+    useContext(GameContext); // Get resetGame from context
 
   const handleNewGame = () => {
-    const newBingoNumbers = [...Array(75)].map((_, i) => i + 1);
-    setBingoNumbers((prev) => ({
-      ...prev,
-      array: newBingoNumbers,
-      randomNumber: "X",
-    }));
+    // This function will now emit the event to the server
+    if (roomCode) {
+      socket.emit("new-game", roomCode);
+    }
+  };
+  const handleLeaveGame = () => {
+    // If the user is a player, explicitly tell the server they are leaving.
+    if (!host.isHost) {
+      socket.emit("leave-game");
+    }
+    resetGame(); // Reset the local state
+    navigate("/"); // Navigate to the homepage
   };
 
   return (
@@ -30,7 +37,7 @@ function Header() {
           Winning Pattern:{" "}
           <span
             onClick={() => setIsClicked(!isClicked)}
-            className="flex items-center h-full gap-1 p-2 hover:bg-gray-700"
+            className="flex items-center h-full gap-1 p-2 cursor-pointer hover:bg-gray-700"
           >
             {host.cardWinningPattern.name}
             {isClicked ? <FaCaretUp /> : <FaCaretDown />}
@@ -58,10 +65,10 @@ function Header() {
               <MdVolumeUp className="text-xl" />
             )}
           </button>
-          
+
           {host.isHost && (
             <button
-              // onClick={handleNewGame}
+              onClick={handleNewGame}
               className="px-3 font-medium text-gray-100 bg-blue-600 rounded-md text-md font-inter hover:bg-blue-700"
             >
               New game
@@ -69,9 +76,7 @@ function Header() {
           )}
 
           <button
-            onClick={() => {
-              navigate("/");
-            }}
+            onClick={handleLeaveGame} // Use the new handler here
             className="px-3 font-medium text-gray-400 text-md font-inter hover:rounded-md hover:bg-gray-700 hover:text-gray-100"
           >
             Leave game

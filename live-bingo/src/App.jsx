@@ -3,7 +3,7 @@ import Lobby from "./pages/Lobby/Lobby";
 import Game from "./pages/Game/Game";
 import JoinRoom from "./pages/Lobby/JoinRoom";
 import HostRoom from "./pages/Lobby/HostRoom";
-import PlayerGuard from "./pages/Game/PlayerGuard"; // Import PlayerGuard
+import PlayerGuard from "./pages/Game/PlayerGuard";
 import HostGuard from "./pages/Game/HostGuard";
 import GameProvider from "./context/GameProvider";
 import NoRoom from "./pages/Game/NoRoom";
@@ -23,7 +23,7 @@ function App() {
       element: <Game />,
       children: [
         { index: true, element: <HostGuard /> },
-        { path: ":playerId", element: <PlayerGuard /> }, // Use PlayerGuard here instead of Player
+        { path: ":playerId", element: <PlayerGuard /> },
       ],
     },
     {
@@ -32,11 +32,9 @@ function App() {
     },
   ]);
   return (
-    <>
-      <GameProvider>
-        <RouterProvider router={router} />
-      </GameProvider>
-    </>
+    <GameProvider>
+      <RouterProvider router={router} />
+    </GameProvider>
   );
 }
 

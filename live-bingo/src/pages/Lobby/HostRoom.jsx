@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { IoIosArrowDown } from "react-icons/io";
-import { IoIosArrowUp } from "react-icons/io";
+import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
 import GameContext from "../../context/GameContext";
 import { socket } from "../../utils/socket";
 
@@ -25,8 +24,15 @@ function HostRoom() {
       host.cardNumber,
       host.cardWinningPattern
     );
-    socket.on("room-created", (roomCode) => {
+    
+    // ** THE FIX IS HERE **
+    // 1. Use .once() to ensure this listener only fires one time for this request.
+    // 2. The server sends back both the `roomCode` and the host's persistent `hostId`.
+    socket.once("room-created", (roomCode, hostId) => {
       setRoomCode(roomCode);
+      // 3. CRUCIAL: Update the global state to mark this user as the host
+      //    and store their unique ID.
+      setHost((prev) => ({ ...prev, id: hostId, isHost: true }));
       navigate(`/${roomCode}`);
     });
   };

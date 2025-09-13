@@ -5,13 +5,17 @@ import Header from "../../components/Header";
 import WinningPatternModal from "../../components/modal/WinningPatternModal";
 import WinnerModal from "../../components/modal/WinnerModal";
 import NoRoom from "./NoRoom";
+import NewGameModal from "../../components/modal/NewGameModal";
 
 function Game() {
   const {
     isOpenModal,
+    winner,
     isLoading,
     host,
     player,
+    winMessage,
+    isNewGameModalVisible,
     roomCode: contextRoomCode,
   } = useContext(GameContext);
   const { roomCode: urlRoomCode, playerId: urlPlayerId } = useParams();
@@ -47,8 +51,8 @@ function Game() {
       <Header />
       <Outlet />
       {isOpenModal && <WinningPatternModal />}
-      {latestWinner && <WinnerModal />}{" "}
-      {/* Show modal if there is a new winner */}
+      {winMessage && <WinnerModal />}
+      {isNewGameModalVisible && <NewGameModal />}
     </div>
   );
 }
