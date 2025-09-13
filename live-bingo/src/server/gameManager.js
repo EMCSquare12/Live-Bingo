@@ -3,25 +3,6 @@ const { generateCard } = require("./utils");
 
 let games = {}; // All active games stored in memory
 
-// This function will run periodically to clean up old, abandoned games.
-setInterval(() => {
-  const now = Date.now();
-  const TEN_MINUTES = 10 * 60 * 1000;
-
-  for (const roomCode in games) {
-    const game = games[roomCode];
-
-    // If the host has been marked as disconnected for a long time, remove the room.
-    if (!game.hostConnected && (now - game.lastActivity > TEN_MINUTES)) {
-      console.log(`[Cleanup] Deleting abandoned room ${roomCode} due to host inactivity.`);
-      // Notify players in the room before deleting
-      io.to(roomCode).emit("error", "Room closed due to host inactivity.");
-      delete games[roomCode];
-    }
-  }
-}, 5 * 60 * 1000); // Check every 5 minutes
-
-
 function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
   const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
   const hostId = uuidv4();
@@ -30,18 +11,18 @@ function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
     hostName,
     hostId,
     hostSocketId: socket.id,
-    hostConnected: true, // Start as connected
+    hostConnected: true,
     cardNumber,
     cardWinningPattern,
     numberCalled: [],
     players: [],
-    winners: [],
-    lastActivity: Date.now(),
+    winner: null,
+    isNewRoundStarting: false,
   };
 
   socket.join(roomCode);
   socket.emit("room-created", roomCode, hostId);
-  console.log(`🎲 Room created: ${roomCode} by host ${hostId}`);
+  console.log(`🎲 Room created: ${roomCode}`);
 }
 
 function joinRoom(io, socket, playerName, roomCode) {
@@ -56,12 +37,11 @@ function joinRoom(io, socket, playerName, roomCode) {
   const player = { id: playerId, socketId: socket.id, name: playerName, cards, result: [], connected: true };
 
   game.players.push(player);
-  game.lastActivity = Date.now();
 
   socket.join(roomCode);
   socket.emit("joined-room", roomCode, player);
 
-  if (game.hostSocketId && game.hostConnected) {
+  if (game.hostSocketId) {
     io.to(game.hostSocketId).emit("players", game.players);
   }
 }
@@ -78,13 +58,13 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
   if (isHost && game.hostId === persistentId) {
     console.log(`Host ${game.hostName} reconnected. New socket ID: ${socket.id}`);
     game.hostSocketId = socket.id;
-    game.hostConnected = true; // Mark as connected
+    game.hostConnected = true;
   } else if (!isHost) {
     const player = game.players.find((p) => p.id === persistentId);
     if (player) {
       console.log(`Player ${player.name} reconnected. New socket ID: ${socket.id}`);
       player.socketId = socket.id;
-      player.connected = true; // Mark as connected
+      player.connected = true;
     } else {
       socket.emit("reconnect-failed", "Player not found");
       return;
@@ -94,12 +74,26 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
     return;
   }
 
-  game.lastActivity = Date.now();
   socket.emit("session-reconnected", { ...game, roomCode });
 
-  if (game.hostSocketId && game.hostConnected) {
+  if (game.hostSocketId) {
     io.to(game.hostSocketId).emit("players", game.players);
   }
+}
+
+function leaveGame(io, socket) {
+    for (const [roomCode, game] of Object.entries(games)) {
+      const playerIndex = game.players.findIndex(p => p.socketId === socket.id);
+      if (playerIndex !== -1) {
+        const removedPlayer = game.players.splice(playerIndex, 1)[0];
+        console.log(`Player ${removedPlayer.name} intentionally left room ${roomCode}.`);
+        
+        if (game.hostSocketId && game.hostConnected) {
+          io.to(game.hostSocketId).emit("players", game.players);
+        }
+        break;
+      }
+    }
 }
 
 function handleDisconnect(io, socket) {
@@ -108,47 +102,81 @@ function handleDisconnect(io, socket) {
   for (const game of Object.values(games)) {
     if (game.hostSocketId === socket.id) {
       console.log(`Host of room ${game.hostId} disconnected.`);
-      game.hostConnected = false; // Simply mark as disconnected
-      game.lastActivity = Date.now();
+      game.hostConnected = false;
       break;
     }
 
-    const player = game.players.find((p) => p.socketId === socket.id);
-    if (player) {
-      console.log(`Player ${player.name} disconnected.`);
-      player.connected = false; // Simply mark as disconnected
-      game.lastActivity = Date.now();
-
-      if (game.hostSocketId && game.hostConnected) {
-        io.to(game.hostSocketId).emit("players", game.players);
-      }
-      break;
+    const playerIndex = game.players.findIndex((p) => p.socketId === socket.id);
+    if (playerIndex !== -1) {
+        const player = game.players[playerIndex];
+        console.log(`Player ${player.name} temporarily disconnected.`);
+        player.connected = false;
+        if (game.hostSocketId && game.hostConnected) {
+            io.to(game.hostSocketId).emit("players", game.players);
+        }
+        break;
     }
   }
 }
 
+function newGame(io, socket, roomCode) {
+  const game = games[roomCode];
+  if (!game || game.hostSocketId !== socket.id) {
+    return;
+  }
 
-// --- rollNumber function remains unchanged ---
+  console.log(`✨ Starting a new game in room ${roomCode}`);
+
+  game.isNewRoundStarting = true;
+  game.numberCalled = [];
+  game.winner = null;
+
+  game.players.forEach(player => {
+    if (player.cards.length > 0) {
+        const allNumbersOnCard = Object.values(player.cards[0]).flat();
+        player.result = allNumbersOnCard;
+    } else {
+        player.result = [];
+    }
+  });
+
+  io.to(roomCode).emit("game-reset", game);
+
+  setTimeout(() => {
+    if (games[roomCode]) {
+      games[roomCode].isNewRoundStarting = false;
+    }
+  }, 5000);
+}
+
 function rollNumber(io, socket, numberCalled, roomCode) {
   const game = games[roomCode];
-  if (!game || !numberCalled || game.winner) return;
-  game.lastActivity = Date.now();
+  if (!game || !numberCalled || game.winner || game.isNewRoundStarting || game.players.length < 2) {
+    console.log("Roll blocked. Conditions not met.");
+    return;
+  }
+
   if (!game.numberCalled.includes(numberCalled)) {
     game.numberCalled.push(numberCalled);
   }
+
   const winningPatternIndices = game.cardWinningPattern.index;
+
   for (const player of game.players) {
     for (const card of player.cards) {
       const cardNumbers = [...card.B, ...card.I, ...card.N, ...card.G, ...card.O];
       const requiredNumbers = winningPatternIndices.map(index => cardNumbers[index]);
       const isWinner = requiredNumbers.every(num => game.numberCalled.includes(num));
+
       if (isWinner) {
-        game.winner = player.name;
-        io.to(roomCode).emit('player-won', { winnerName: player.name });
+        game.winner = { id: player.id, name: player.name };
+        console.log(`🎉 Winner found: ${player.name} in room ${roomCode}`);
+        io.to(roomCode).emit('player-won', { winnerName: player.name, winnerId: player.id });
         return;
       }
     }
   }
+
   game.players.forEach(player => {
     if (player.cards.length >= 2) {
       const bestCard = player.cards.reduce((best, current) => {
@@ -163,11 +191,12 @@ function rollNumber(io, socket, numberCalled, roomCode) {
       player.result = allNumbersOnCard.filter(n => !game.numberCalled.includes(n));
     }
   });
+
   io.to(roomCode).emit("number-called", game.numberCalled);
-  if (game.hostSocketId) {
+
+  if (game.hostSocketId && game.hostConnected) {
     io.to(game.hostSocketId).emit("players", game.players);
   }
 }
 
-
-module.exports = { createRoom, joinRoom, rollNumber, handleDisconnect, reconnectPlayer };
+module.exports = { createRoom, joinRoom, rollNumber, handleDisconnect, reconnectPlayer, newGame, leaveGame };
