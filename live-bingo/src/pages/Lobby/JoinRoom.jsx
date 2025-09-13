@@ -32,12 +32,11 @@ function JoinRoom() {
       return;
     }
     socket.emit("join-room", player.name, roomCode);
-    socket.once("joined-room", (roomCode, player) => {
-      console.log("✅ joined-room received:", roomCode, player);
-      setRoomCode(roomCode);
-      setPlayer(player);
-      setHost((prev) => ({ ...prev, players: [...prev.players, player] }));
-      navigate(`/${roomCode}/${player.id}`);
+    socket.once("joined-room", (joinedRoomCode, newPlayer) => {
+      console.log("✅ joined-room received:", joinedRoomCode, newPlayer);
+      setRoomCode(joinedRoomCode);
+      setPlayer(newPlayer); // newPlayer now contains the persistent ID
+      navigate(`/${joinedRoomCode}/${newPlayer.id}`);
     });
   };
 

@@ -7,7 +7,7 @@ import { FaCopy } from "react-icons/fa6";
 function Host() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [copied, setCopied] = useState(false);
-  const { host, setHost, bingoNumbers, setBingoNumbers, roomCode } =
+  const { host, setHost, bingoNumbers, setBingoNumbers, roomCode, winners } =
     useContext(GameContext);
   const location = useLocation();
 
@@ -45,11 +45,18 @@ function Host() {
   ];
 
   useEffect(() => {
-    socket.on("players", (players) => {
+    const handlePlayersUpdate = (players) => {
+      // Use the stable setHost function from context to update the players list
       setHost((prev) => ({ ...prev, players }));
-    });
-    return () => socket.off("players");
-  }, []);
+    };
+
+    socket.on("players", handlePlayersUpdate);
+
+    // The cleanup function removes this specific listener when the component unmounts.
+    return () => {
+      socket.off("players", handlePlayersUpdate);
+    };
+  }, [setHost]); // Dependency on setHost, which is stable and ensures the effect is set up correctly.
 
   const handleRollNumber = () => {
     if (bingoNumbers.array.length === 0) return;
@@ -94,9 +101,13 @@ function Host() {
   };
 
   // Sort players by the length of their result array (ascending)
-  const sortedPlayers = [...host.players].sort(
-    (a, b) => a.result.length - b.result.length
-  );
+  const sortedPlayers = [...host.players].sort((a, b) => {
+    const aHasWon = winners.includes(a.name);
+    const bHasWon = winners.includes(b.name);
+    if (aHasWon && !bHasWon) return -1;
+    if (!aHasWon && bHasWon) return 1;
+    return a.result.length - b.result.length;
+  });
 
   return (
     <div className="flex flex-col items-center justify-between bg-gray-900">
@@ -198,13 +209,21 @@ function Host() {
           <ul className="flex flex-col gap-1 px-4 mt-2">
             {sortedPlayers.map((player, index) => {
               const isOpen = selectedPlayer === index;
+              const hasWon = winners.includes(player.name);
 
               return (
                 <li
                   onClick={() => setSelectedPlayer(isOpen ? null : index)}
                   key={player.id || index}
-                  className="flex flex-row gap-6 p-1 text-xs font-normal text-gray-300 border-b border-gray-500 rounded-md cursor-pointer font-inter hover:bg-gray-500"
+                  className={`flex flex-row gap-6 p-1 text-xs font-normal border-b border-gray-500 rounded-md cursor-pointer font-inter ${
+                    hasWon ? "text-yellow-400" : "text-gray-300"
+                  } hover:bg-gray-500`}
                 >
+                  {/* Player Name and Trophy */}
+                  <div className="flex items-center w-24 gap-2">
+                    {hasWon && <FaTrophy />}
+                    <span>{player.name}</span>
+                  </div>
                   {/* Player Name */}
                   <div className="w-24">{player.name}</div>
 

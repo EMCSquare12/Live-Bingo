@@ -3,9 +3,10 @@ import Lobby from "./pages/Lobby/Lobby";
 import Game from "./pages/Game/Game";
 import JoinRoom from "./pages/Lobby/JoinRoom";
 import HostRoom from "./pages/Lobby/HostRoom";
-import Player from "./pages/Game/Player";
-import Host from "./pages/Game/Host";
+import PlayerGuard from "./pages/Game/PlayerGuard"; // Import PlayerGuard
+import HostGuard from "./pages/Game/HostGuard";
 import GameProvider from "./context/GameProvider";
+import NoRoom from "./pages/Game/NoRoom";
 
 function App() {
   const router = createBrowserRouter([
@@ -21,9 +22,13 @@ function App() {
       path: "/:roomCode",
       element: <Game />,
       children: [
-        { index: true, element: <Host /> }, // Use the guard
-        { path: ":playerId", element: <Player /> }, // dynamic playerId
+        { index: true, element: <HostGuard /> },
+        { path: ":playerId", element: <PlayerGuard /> }, // Use PlayerGuard here instead of Player
       ],
+    },
+    {
+      path: "/no-room",
+      element: <NoRoom />,
     },
   ]);
   return (

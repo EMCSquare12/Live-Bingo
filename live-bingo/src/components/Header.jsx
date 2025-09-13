@@ -1,12 +1,10 @@
-import { MdVolumeUp } from "react-icons/md";
-import { MdVolumeOff } from "react-icons/md";
-import { FaCaretDown } from "react-icons/fa";
-import { FaCaretUp } from "react-icons/fa";
+import { MdVolumeUp, MdVolumeOff } from "react-icons/md";
+import { FaCaretDown, FaCaretUp } from "react-icons/fa";
 import Logo from "./Logo";
 import { useNavigate } from "react-router-dom";
 import { useContext, useState } from "react";
 import WinningPatternCard from "./WinningPatternCard";
-import GameContext from "../context/GameContext";
+import GameContext from "../context/GameContext.js"; // Corrected file path
 
 function Header() {
   const navigate = useNavigate();
@@ -60,12 +58,16 @@ function Header() {
               <MdVolumeUp className="text-xl" />
             )}
           </button>
-          <button
-            // onClick={handleNewGame}
-            className="px-3 font-medium text-gray-100 bg-blue-600 rounded-md text-md font-inter hover:bg-blue-700"
-          >
-            New game
-          </button>
+          
+          {host.isHost && (
+            <button
+              // onClick={handleNewGame}
+              className="px-3 font-medium text-gray-100 bg-blue-600 rounded-md text-md font-inter hover:bg-blue-700"
+            >
+              New game
+            </button>
+          )}
+
           <button
             onClick={() => {
               navigate("/");
