@@ -1,4 +1,4 @@
-const { createRoom, joinRoom, rollNumber, handleDisconnect } = require("./gameManager");
+const { createRoom, joinRoom, rollNumber, handleDisconnect, reconnectPlayer } = require("./gameManager");
 
 function registerSocketHandlers(io) {
     io.on("connection", (socket) => {
@@ -10,6 +10,10 @@ function registerSocketHandlers(io) {
 
         socket.on("join-room", (playerName, roomCode) => {
             joinRoom(io, socket, playerName, roomCode);
+        });
+        
+        socket.on("reconnect-player", (roomCode, playerId, isHost) => {
+            reconnectPlayer(io, socket, roomCode, playerId, isHost);
         });
 
         socket.on("roll-number", (numberCalled, roomCode) => {

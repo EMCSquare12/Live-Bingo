@@ -3,6 +3,7 @@ const http = require("http");
 const { Server } = require("socket.io");
 const cors = require("cors");
 const registerSocketHandlers = require("./socket");
+const { cleanupInactiveRooms } = require("./gameManager"); // Import the cleanup function
 
 const app = express();
 const server = http.createServer(app);
@@ -12,6 +13,9 @@ app.use(cors());
 
 // Register all socket events
 registerSocketHandlers(io);
+
+// Start periodic cleanup of inactive rooms (e.g., every 5 minutes)
+// setInterval(() => cleanupInactiveRooms(io), 5 * 60 * 1000);
 
 // Start server
 const PORT = 3001;
