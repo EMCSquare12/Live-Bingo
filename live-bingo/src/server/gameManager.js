@@ -6,23 +6,17 @@ let games = {}; // All active games stored in memory
 function endGame(io, roomCode) {
   const game = games[roomCode];
   if (game) {
-    console.log(`Host is ending the game in room ${roomCode}.`);
+    console.log(`Ending game in room ${roomCode}.`);
+
+    // Notify all clients in the room that the host has left
+    io.to(roomCode).emit("host-left");
+
+    // Disconnect all player sockets
+    const playerSockets = game.players.map(p => io.sockets.sockets.get(p.socketId)).filter(s => s);
+    playerSockets.forEach(socket => socket.disconnect(true));
+
+    // Disconnect the host socket if it still exists
     const hostSocket = io.sockets.sockets.get(game.hostSocketId);
-
-    // Notify all players (except the host) that the host has left
-    if (hostSocket) {
-      hostSocket.to(roomCode).emit("host-left");
-    }
-
-    // Disconnect all players
-    game.players.forEach(player => {
-      const playerSocket = io.sockets.sockets.get(player.socketId);
-      if (playerSocket) {
-        playerSocket.disconnect(true);
-      }
-    });
-
-    // Disconnect the host
     if (hostSocket) {
       hostSocket.disconnect(true);
     }
