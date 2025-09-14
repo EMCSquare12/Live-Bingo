@@ -6,6 +6,7 @@ const GameProvider = ({ children }) => {
   const [roomCode, setRoomCode] = useState("");
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isReconnecting, setIsReconnecting] = useState(false); // New state for reconnection
   const [winMessage, setWinMessage] = useState("");
   const [isNewGameModalVisible, setIsNewGameModalVisible] = useState(false);
   const [isHostLeftModalVisible, setIsHostLeftModalVisible] = useState(false);
@@ -51,6 +52,7 @@ const GameProvider = ({ children }) => {
   useEffect(() => {
     const session = JSON.parse(sessionStorage.getItem("bingo-session"));
     if (session && session.roomCode) {
+      setIsReconnecting(true); // Start reconnection process
       socket.emit(
         "reconnect-player",
         session.roomCode,
@@ -97,13 +99,13 @@ const GameProvider = ({ children }) => {
         }
       }
       setIsLoading(false);
+      setIsReconnecting(false); // End reconnection process
     };
 
     const handleReconnectFailed = (message) => {
       console.error("Reconnect failed:", message);
-      sessionStorage.removeItem("bingo-session");
-      setHost((prev) => ({ ...prev, isHost: false, id: "" }));
       setIsLoading(false);
+      setIsReconnecting(false); // End reconnection process
     };
 
     const handlePlayersWon = (winners) => {
@@ -187,6 +189,7 @@ const GameProvider = ({ children }) => {
       roomCode,
       setRoomCode,
       isLoading,
+      isReconnecting, // Pass down new state
       winMessage,
       setWinMessage,
       isNewGameModalVisible,
@@ -204,6 +207,7 @@ const GameProvider = ({ children }) => {
       player,
       bingoNumbers,
       isLoading,
+      isReconnecting,
       winMessage,
       isNewGameModalVisible,
       isHostLeftModalVisible,

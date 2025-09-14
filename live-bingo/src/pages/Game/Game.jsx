@@ -13,6 +13,7 @@ function Game() {
   const {
     isOpenModal,
     isLoading,
+    isReconnecting, // Use new state
     host,
     player,
     winMessage,
@@ -23,7 +24,8 @@ function Game() {
   } = useContext(GameContext);
   const { roomCode: urlRoomCode, playerId: urlPlayerId } = useParams();
 
-  if (isLoading) {
+  if (isLoading || isReconnecting) {
+    // Check both states
     return (
       <div className="flex items-center justify-center w-screen h-screen text-white bg-gray-900">
         Loading Game...
@@ -31,6 +33,7 @@ function Game() {
     );
   }
 
+  // Authorization checks remain the same but are now called after reconnection is resolved
   const isAuthorizedHost =
     host.isHost &&
     !urlPlayerId &&
