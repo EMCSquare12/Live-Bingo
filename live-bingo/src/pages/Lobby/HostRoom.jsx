@@ -8,15 +8,26 @@ function HostRoom() {
   const { setIsOpenModal, host, setHost, setRoomCode } =
     useContext(GameContext);
   const [isClickList, setIsClickList] = useState(false);
-  const [isEmpty, setIsEmpty] = useState(false);
-  const nameRef = useRef(null);
+  const [errors, setErrors] = useState({}); // State to hold validation errors
   const listRef = useRef(null);
   const navigate = useNavigate();
 
+  // New validation function
+  const validateInputs = () => {
+    const newErrors = {};
+    if (!host.hostName.trim()) {
+      newErrors.hostName = "Host name cannot be empty.";
+    }
+    if (!host.cardWinningPattern.name) {
+      newErrors.cardWinningPattern = "Please select a winning pattern.";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const hostGame = () => {
-    if (!host.hostName) {
-      setIsEmpty(true);
-      return;
+    if (!validateInputs()) {
+      return; // Stop if validation fails
     }
     socket.emit(
       "create-room",
@@ -24,14 +35,8 @@ function HostRoom() {
       host.cardNumber,
       host.cardWinningPattern
     );
-    
-    // ** THE FIX IS HERE **
-    // 1. Use .once() to ensure this listener only fires one time for this request.
-    // 2. The server sends back both the `roomCode` and the host's persistent `hostId`.
     socket.once("room-created", (roomCode, hostId) => {
       setRoomCode(roomCode);
-      // 3. CRUCIAL: Update the global state to mark this user as the host
-      //    and store their unique ID.
       setHost((prev) => ({ ...prev, id: hostId, isHost: true }));
       navigate(`/${roomCode}`);
     });
@@ -42,19 +47,11 @@ function HostRoom() {
       setIsClickList(false);
     }
   };
+
   useEffect(() => {
-    const handleClick = () => setIsEmpty(false);
     document.addEventListener("mousedown", handleClickOutside);
-
-    if (nameRef.current) {
-      nameRef.current.addEventListener("click", handleClick);
-    }
-
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      if (nameRef.current) {
-        nameRef.current.removeEventListener("click", handleClick);
-      }
     };
   }, []);
 
@@ -67,13 +64,14 @@ function HostRoom() {
   };
 
   const handleCardPattern = (value) => {
+    setErrors((prev) => ({ ...prev, cardWinningPattern: null })); // Clear error on selection
     if (value === "Blackout") {
       const newArr = Array.from({ length: 25 }, (_, index) => index);
       setHost((prev) => ({
         ...prev,
         cardWinningPattern: {
           ...prev.cardWinningPattern,
-          name: "Customize",
+          name: "Blackout",
           index: newArr,
         },
       }));
@@ -83,6 +81,9 @@ function HostRoom() {
   };
 
   const handleOnchange = (value) => {
+    if (value.trim()) {
+      setErrors((prev) => ({ ...prev, hostName: null }));
+    }
     setHost((prev) => ({
       ...prev,
       hostName: value,
@@ -104,13 +105,19 @@ function HostRoom() {
             Your Name
           </label>
           <input
-            ref={nameRef}
             onChange={(e) => handleOnchange(e.target.value)}
             value={host.hostName}
             id="name"
             type="text"
-            className="h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter focus:ring-2 focus:ring-blue-500 w-72"
+            className={`h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter w-72 ${
+              errors.hostName
+                ? "ring-2 ring-red-500"
+                : "focus:ring-2 focus:ring-blue-500"
+            }`}
           />
+          {errors.hostName && (
+            <p className="mt-1 text-xs text-red-500">{errors.hostName}</p>
+          )}
         </div>
         <div className="flex flex-row gap-4 pb-6">
           <label
@@ -163,7 +170,11 @@ function HostRoom() {
           </div>
         </div>
         <div className="flex flex-col gap-2 pb-6">
-          <label className="font-normal text-gray-50 text-md w-fit font-inter">
+          <label
+            className={`font-normal text-md w-fit font-inter ${
+              errors.cardWinningPattern ? "text-red-500" : "text-gray-50"
+            }`}
+          >
             Winning card pattern
           </label>
           <div className="flex flex-row items-center justify-center gap-2 w-fit">
@@ -174,6 +185,7 @@ function HostRoom() {
               value="Blackout"
               name="cardPattern"
               className="w-5 h-5 rounded-md outline-none"
+              checked={host.cardWinningPattern.name === "Blackout"}
             />
             <label
               htmlFor="blackout"
@@ -190,20 +202,23 @@ function HostRoom() {
               value="Customize"
               className="w-5 h-5 rounded-md outline-none"
               onClick={(e) => handleCardPattern(e.target.value)}
+              checked={host.cardWinningPattern.name && host.cardWinningPattern.name !== "Blackout"}
             />
             <label
               htmlFor="customize"
               className="text-sm font-normal cursor-pointer text-gray-50 w-fit font-inter"
             >
-              {host.cardWinningPattern.name || "Customize"}
+              {host.cardWinningPattern.name && host.cardWinningPattern.name !== "Blackout"
+                ? host.cardWinningPattern.name
+                : "Customize"}
             </label>
           </div>
+          {errors.cardWinningPattern && (
+            <p className="mt-1 text-xs text-red-500">
+              {errors.cardWinningPattern}
+            </p>
+          )}
         </div>
-        {isEmpty && (
-          <div className="flex justify-center w-full -mt-6 text-sm text-red-500 font-inter">
-            Please enter host name
-          </div>
-        )}
         <button
           onClick={hostGame}
           className="flex items-center justify-center w-full h-12 text-lg font-medium bg-blue-600 rounded-md text-gray-50 hover:bg-blue-700"

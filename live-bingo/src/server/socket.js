@@ -8,8 +8,9 @@ function registerSocketHandlers(io) {
       createRoom(io, socket, hostName, cardNumber, cardWinningPattern);
     });
 
-    socket.on("join-room", (playerName, roomCode) => {
-      joinRoom(io, socket, playerName, roomCode);
+    // The handler now accepts a callback function from the client.
+    socket.on("join-room", (playerName, roomCode, callback) => {
+      joinRoom(io, socket, playerName, roomCode, callback);
     });
 
     socket.on("reconnect-player", (roomCode, playerId, isHost) => {
@@ -19,7 +20,7 @@ function registerSocketHandlers(io) {
     socket.on("leave-game", () => {
       leaveGame(io, socket);
     });
-    
+
     socket.on("host-leave", (roomCode) => {
       endGame(io, roomCode);
     });

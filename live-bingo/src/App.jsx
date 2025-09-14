@@ -16,31 +16,35 @@ import GameContext from "./context/GameContext";
 import { socket } from "./utils/socket";
 
 // This component lives inside the router and handles navigation events
+// This component lives inside the router and handles navigation events
 const NavigationHandler = () => {
   const navigate = useNavigate();
   const { resetGame, host } = useContext(GameContext);
 
   useEffect(() => {
-    // Only players need to listen for this event
-    if (!host.isHost) {
-      const handleHostLeft = () => {
-        console.log("[Client] Received 'host-left' event!");
+    // This event handler will be called when the server broadcasts "host-left"
+    const handleHostLeft = () => {
+      // We double-check that this client is a player before taking action.
+      if (!host.isHost) {
+        console.log(
+          "[Client] The host has left the game. Navigating to lobby."
+        );
         alert("The host has ended the game. Returning to the lobby.");
-        resetGame();
-        navigate("/");
-      };
-      
-      console.log("[Client] Player is setting up 'host-left' listener.");
-      socket.on("host-left", handleHostLeft);
+        resetGame(); // Clear all game-related state
+        navigate("/"); // Redirect to the homepage/lobby
+      }
+    };
 
-      return () => {
-        console.log("[Client] Player is cleaning up 'host-left' listener.");
-        socket.off("host-left", handleHostLeft);
-      };
-    }
-  }, [navigate, resetGame, host.isHost]);
+    // Listen for the 'host-left' event from the server
+    socket.on("host-left", handleHostLeft);
 
-  return null; // This component renders nothing
+    // Cleanup: remove the event listener when the component unmounts
+    return () => {
+      socket.off("host-left", handleHostLeft);
+    };
+  }, [navigate, resetGame, host.isHost]); // Dependencies for the effect
+
+  return null; // This component does not render anything
 };
 
 function App() {
