@@ -1,5 +1,6 @@
 import { useContext } from "react";
 import { Outlet, useParams } from "react-router-dom";
+import Confetti from "react-confetti";
 import GameContext from "../../context/GameContext.js";
 import Header from "../../components/Header";
 import WinningPatternModal from "../../components/modal/WinningPatternModal";
@@ -13,7 +14,7 @@ function Game() {
   const {
     isOpenModal,
     isLoading,
-    isReconnecting, // Use new state
+    isReconnecting,
     host,
     player,
     winMessage,
@@ -21,11 +22,11 @@ function Game() {
     isHostLeftModalVisible,
     confirmation,
     roomCode: contextRoomCode,
+    showConfetti, // Get the confetti state
   } = useContext(GameContext);
   const { roomCode: urlRoomCode, playerId: urlPlayerId } = useParams();
 
   if (isLoading || isReconnecting) {
-    // Check both states
     return (
       <div className="flex items-center justify-center w-screen h-screen text-white bg-gray-900">
         Loading Game...
@@ -33,7 +34,6 @@ function Game() {
     );
   }
 
-  // Authorization checks remain the same but are now called after reconnection is resolved
   const isAuthorizedHost =
     host.isHost &&
     !urlPlayerId &&
@@ -50,6 +50,7 @@ function Game() {
 
   return (
     <div className="relative flex flex-col w-screen min-h-screen">
+      {showConfetti && <Confetti />}
       <Header />
       <Outlet />
       {isOpenModal && <WinningPatternModal />}

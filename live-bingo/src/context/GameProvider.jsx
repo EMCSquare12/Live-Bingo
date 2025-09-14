@@ -10,12 +10,16 @@ const GameProvider = ({ children }) => {
   const [winMessage, setWinMessage] = useState("");
   const [isNewGameModalVisible, setIsNewGameModalVisible] = useState(false);
   const [isHostLeftModalVisible, setIsHostLeftModalVisible] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
   const [confirmation, setConfirmation] = useState({
     isOpen: false,
     message: "",
     onConfirm: () => {},
     onCancel: () => {},
   });
+
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [displayNumber, setDisplayNumber] = useState(null);
 
   const initialBingoNumbers = {
     array: [...Array(75)].map((_, i) => i + 1),
@@ -37,6 +41,16 @@ const GameProvider = ({ children }) => {
   const [player, setPlayer] = useState(initialPlayerState);
   const [host, setHost] = useState(initialHostState);
 
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 10000);
+
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
+
   const resetGame = () => {
     setHost(initialHostState);
     setPlayer(initialPlayerState);
@@ -45,8 +59,8 @@ const GameProvider = ({ children }) => {
     setRoomCode("");
     setIsNewGameModalVisible(false);
     setIsHostLeftModalVisible(false);
+    setShowConfetti(false);
     sessionStorage.removeItem("bingo-session");
-    // Disconnect and reconnect the socket to ensure a clean state
     socket.disconnect();
     socket.connect();
     console.log("Game state has been reset and socket reconnected.");
@@ -93,6 +107,7 @@ const GameProvider = ({ children }) => {
         array: remainingNumbers,
         randomNumber: lastCalledNumber,
       });
+      setDisplayNumber(lastCalledNumber);
       if (currentSession && !currentSession.isHost) {
         const currentPlayer = game.players.find(
           (p) => p.id === currentSession.id
@@ -116,6 +131,7 @@ const GameProvider = ({ children }) => {
       const amIWinner = winners.some((winner) => winner.id === player.id);
 
       if (amIWinner) {
+        setShowConfetti(true);
         if (winners.length > 1) {
           setWinMessage("BINGO! You and others have won!");
         } else {
@@ -133,6 +149,8 @@ const GameProvider = ({ children }) => {
 
     const handleGameReset = (game) => {
       console.log("Client received game-reset event");
+      setShowConfetti(false);
+      setDisplayNumber(null); // Reset the display number to null
       setBingoNumbers({
         array: [...Array(75)].map((_, i) => i + 1),
         randomNumber: null,
@@ -149,15 +167,34 @@ const GameProvider = ({ children }) => {
       }
     };
 
-    const handleNumberCalled = (numberCalled) => {
-      setHost((prev) => ({ ...prev, numberCalled }));
+    const handleShuffling = (num) => {
+      setIsShuffling(true);
+      setDisplayNumber(num);
     };
+
+    const handleNumberCalled = (numberCalledArray) => {
+      setIsShuffling(false);
+      const finalNumber = numberCalledArray.at(-1);
+
+      setDisplayNumber(finalNumber);
+
+      setHost((prev) => ({ ...prev, numberCalled: numberCalledArray }));
+
+      const allNumbers = [...Array(75)].map((_, i) => i + 1);
+      setBingoNumbers((prev) => ({
+        ...prev,
+        randomNumber: finalNumber,
+        array: allNumbers.filter((num) => !numberCalledArray.includes(num)),
+      }));
+    };
+
+    socket.on("shuffling", handleShuffling);
+    socket.on("number-called", handleNumberCalled);
 
     socket.on("session-reconnected", handleSessionReconnect);
     socket.on("reconnect-failed", handleReconnectFailed);
     socket.on("players-won", handlePlayersWon);
     socket.on("game-reset", handleGameReset);
-    socket.on("number-called", handleNumberCalled);
 
     return () => {
       socket.off("session-reconnected", handleSessionReconnect);
@@ -165,6 +202,7 @@ const GameProvider = ({ children }) => {
       socket.off("players-won", handlePlayersWon);
       socket.off("game-reset", handleGameReset);
       socket.off("number-called", handleNumberCalled);
+      socket.off("shuffling", handleShuffling);
     };
   }, [player.id, host.isHost]);
 
@@ -202,6 +240,10 @@ const GameProvider = ({ children }) => {
       confirmation,
       setConfirmation,
       resetGame,
+      showConfetti,
+      setShowConfetti,
+      isShuffling,
+      displayNumber,
     }),
     [
       isOpenModal,
@@ -215,6 +257,9 @@ const GameProvider = ({ children }) => {
       isNewGameModalVisible,
       isHostLeftModalVisible,
       confirmation,
+      showConfetti,
+      isShuffling,
+      displayNumber,
     ]
   );
 

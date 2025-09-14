@@ -33,15 +33,15 @@ const FaTrophy = () => (
 );
 
 function Host() {
-  const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [copied, setCopied] = useState(false);
   const {
     host,
     setHost,
     bingoNumbers,
-    setBingoNumbers,
     roomCode,
     isNewGameModalVisible,
+    isShuffling,
+    displayNumber,
   } = useContext(GameContext);
   const location = useLocation();
 
@@ -89,30 +89,15 @@ function Host() {
   }, [setHost]);
 
   const handleRollNumber = () => {
-    if (bingoNumbers.array.length === 0) return;
-    const randomNumber =
-      bingoNumbers.array[Math.floor(Math.random() * bingoNumbers.array.length)];
-    const removedNumber = bingoNumbers.array.filter(
-      (num) => num !== randomNumber
-    );
-    setBingoNumbers((prev) => ({
-      ...prev,
-      randomNumber,
-      array: removedNumber,
-    }));
+    socket.emit("request-new-number", roomCode);
   };
 
-  useEffect(() => {
-    if (bingoNumbers.randomNumber) {
-      socket.emit("roll-number", bingoNumbers.randomNumber, roomCode);
-    }
-  }, [bingoNumbers.randomNumber, roomCode]);
-
-  const currentCol = bingoNumbers.randomNumber
+  const finalRolledNumber = host.numberCalled.at(-1);
+  const currentCol = !isShuffling && finalRolledNumber
     ? columns.find(
         (c) =>
-          bingoNumbers.randomNumber >= c.range[0] &&
-          bingoNumbers.randomNumber <= c.range[1]
+          finalRolledNumber >= c.range[0] &&
+          finalRolledNumber <= c.range[1]
       )
     : null;
 
@@ -133,7 +118,9 @@ function Host() {
   const isRollDisabled =
     isNewGameModalVisible ||
     host.players.length < 1 ||
-    (host.winners && host.winners.length > 0);
+    bingoNumbers.array.length === 0 ||
+    (host.winners && host.winners.length > 0) ||
+    isShuffling;
 
   return (
     <div className="flex flex-col items-center justify-between bg-gray-900">
@@ -169,7 +156,7 @@ function Host() {
               </div>
             )}
             <div className="w-full font-medium text-center text-8xl md:text-9xl font-inter text-gray-50">
-              {bingoNumbers.randomNumber ?? "X"}
+              {displayNumber ?? "X"}
             </div>
           </div>
           <button

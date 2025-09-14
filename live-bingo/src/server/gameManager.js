@@ -3,6 +3,42 @@ const { generateCard } = require("./utils");
 
 let games = {}; // All active games stored in memory
 
+// --- New Function for Shuffling ---
+function rollAndShuffleNumber(io, socket, roomCode) {
+  const game = games[roomCode];
+  if (
+    !game ||
+    game.hostSocketId !== socket.id ||
+    (game.winners && game.winners.length > 0) ||
+    game.isShuffling
+  ) {
+    return;
+  }
+
+  game.isShuffling = true;
+
+  const shuffleInterval = setInterval(() => {
+    const randomShuffleNumber = Math.floor(Math.random() * 75) + 1;
+    io.to(roomCode).emit("shuffling", randomShuffleNumber);
+  }, 60);
+
+  setTimeout(() => {
+    clearInterval(shuffleInterval);
+    game.isShuffling = false;
+
+    const availableNumbers = [...Array(75)]
+      .map((_, i) => i + 1)
+      .filter((n) => !game.numberCalled.includes(n));
+
+    if (availableNumbers.length > 0) {
+      const randomNumber =
+        availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
+      rollNumber(io, socket, randomNumber, roomCode);
+    }
+  }, 1500);
+}
+
+
 function endGame(io, roomCode) {
   const game = games[roomCode];
   if (game) {
@@ -42,6 +78,7 @@ function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
     winners: [],
     isNewRoundStarting: false,
     disconnectTimeout: null, // To manage host disconnects
+    isShuffling: false, // Add this to prevent multiple rolls
   };
 
   socket.join(roomCode);
@@ -313,4 +350,5 @@ module.exports = {
   newGame,
   leaveGame,
   endGame,
+  rollAndShuffleNumber, // Export the new function
 };

@@ -3,10 +3,9 @@ import BingoCard from "../../components/BingoCard";
 import GameContext from "../../context/GameContext";
 
 function Player() {
-  const { player, host } = useContext(GameContext);
+  const { player, host, isShuffling, displayNumber } = useContext(GameContext);
   const [isRefreshed, setIsRefreshed] = useState(false);
   const cards = player.cards ?? [];
-  const last = host.numberCalled.at(-1);
 
   const columns = [
     {
@@ -40,7 +39,15 @@ function Player() {
       bgColor: "bg-yellow-500 ",
     },
   ];
-  const col = columns.find((c) => last >= c.range[0] && last <= c.range[1]);
+
+  const finalRolledNumber = host.numberCalled.at(-1);
+  const col =
+    !isShuffling && finalRolledNumber
+      ? columns.find(
+          (c) =>
+            finalRolledNumber >= c.range[0] && finalRolledNumber <= c.range[1]
+        )
+      : null;
 
   return (
     <div className="grid w-full h-full min-h-screen grid-cols-[40%_60%] bg-gray-900 items-start justify-start ">
@@ -49,7 +56,7 @@ function Player() {
           Player: {player.name}
         </h1>
         <div className="flex flex-row items-center justify-center gap-6 py-5 border-t border-b border-gray-500">
-          {last && col && (
+          {col && (
             <div
               className={`flex items-center justify-center font-bold text-7xl ${col.bgColor}  rounded-lg text-gray-50 w-24 h-24 font-inter`}
             >
@@ -58,7 +65,7 @@ function Player() {
           )}
 
           <div className="font-medium text-center w-fit text-9xl font-inter text-gray-50">
-            {last ?? "X"}
+            {displayNumber ?? "X"}
           </div>
         </div>
         <div>
