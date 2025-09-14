@@ -47,6 +47,7 @@ function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
     players: [],
     winners: [],
     isNewRoundStarting: false,
+    disconnectTimeout: null, // To manage host disconnects
   };
 
   socket.join(roomCode);
@@ -109,6 +110,13 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
     );
     game.hostSocketId = socket.id;
     game.hostConnected = true;
+
+    // Clear the disconnect timeout if the host reconnects in time
+    if (game.disconnectTimeout) {
+      clearTimeout(game.disconnectTimeout);
+      game.disconnectTimeout = null;
+      console.log(`Disconnect timer for room ${roomCode} cleared.`);
+    }
   } else if (!isHost) {
     const player = game.players.find((p) => p.id === persistentId);
     if (player) {
@@ -160,7 +168,17 @@ function handleDisconnect(io, socket) {
 
   for (const [roomCode, game] of Object.entries(games)) {
     if (game.hostSocketId === socket.id) {
-      endGame(io, roomCode);
+      console.log(`Host ${game.hostName} temporarily disconnected.`);
+      game.hostConnected = false;
+
+      // Set a timer to end the game if the host doesn't reconnect
+      game.disconnectTimeout = setTimeout(() => {
+        if (games[roomCode] && !games[roomCode].hostConnected) {
+          console.log(`Host did not reconnect for room ${roomCode}. Ending game.`);
+          endGame(io, roomCode);
+        }
+      }, 30000); // 30-second grace period
+
       break;
     }
 
@@ -302,4 +320,3 @@ module.exports = {
   leaveGame,
   endGame,
 };
-
