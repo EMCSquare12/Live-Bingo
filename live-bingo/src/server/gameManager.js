@@ -263,7 +263,7 @@ function rollNumber(io, socket, numberCalled, roomCode) {
     !numberCalled ||
     (game.winners && game.winners.length > 0) ||
     game.isNewRoundStarting ||
-    game.players.length < 1
+    game.players.length < 2 // Changed from < 1 to < 2
   ) {
     console.log("Roll blocked. Conditions not met.");
     return;
