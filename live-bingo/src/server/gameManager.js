@@ -7,10 +7,26 @@ function endGame(io, roomCode) {
   const game = games[roomCode];
   if (game) {
     console.log(`Host is ending the game in room ${roomCode}.`);
-    // Notify all players in the room that the host has left
-    io.to(roomCode).emit("host-left");
+    const hostSocket = io.sockets.sockets.get(game.hostSocketId);
 
-    // Clean up the game room from memory
+    // Notify all players (except the host) that the host has left
+    if (hostSocket) {
+      hostSocket.to(roomCode).emit("host-left");
+    }
+
+    // Disconnect all players
+    game.players.forEach(player => {
+      const playerSocket = io.sockets.sockets.get(player.socketId);
+      if (playerSocket) {
+        playerSocket.disconnect(true);
+      }
+    });
+
+    // Disconnect the host
+    if (hostSocket) {
+      hostSocket.disconnect(true);
+    }
+
     delete games[roomCode];
     console.log(`🧹 Room ${roomCode} has been closed and removed.`);
   }
@@ -29,7 +45,7 @@ function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
     cardWinningPattern,
     numberCalled: [null], // Initialize with null for the "FREE" space
     players: [],
-    winner: null,
+    winners: [],
     isNewRoundStarting: false,
   };
 
@@ -171,7 +187,7 @@ function newGame(io, socket, roomCode) {
 
   game.isNewRoundStarting = true;
   game.numberCalled = [null]; // Reset with null for the "FREE" space
-  game.winner = null;
+  game.winners = [];
 
   game.players.forEach((player) => {
     if (player.cards.length > 0) {
@@ -196,9 +212,9 @@ function rollNumber(io, socket, numberCalled, roomCode) {
   if (
     !game ||
     !numberCalled ||
-    game.winner ||
+    (game.winners && game.winners.length > 0) ||
     game.isNewRoundStarting ||
-    game.players.length < 2
+    game.players.length < 1
   ) {
     console.log("Roll blocked. Conditions not met.");
     return;
@@ -208,7 +224,11 @@ function rollNumber(io, socket, numberCalled, roomCode) {
     game.numberCalled.push(numberCalled);
   }
 
+  // Emit the new number to all clients first.
+  io.to(roomCode).emit("number-called", game.numberCalled);
+
   const winningPatternIndices = game.cardWinningPattern.index;
+  let hasWinner = false;
 
   for (const player of game.players) {
     for (const card of player.cards) {
@@ -227,15 +247,20 @@ function rollNumber(io, socket, numberCalled, roomCode) {
       );
 
       if (isWinner) {
-        game.winner = { id: player.id, name: player.name };
-        console.log(`🎉 Winner found: ${player.name} in room ${roomCode}`);
-        io.to(roomCode).emit("player-won", {
-          winnerName: player.name,
-          winnerId: player.id,
-        });
-        return;
+        if (!game.winners.some(w => w.id === player.id)) {
+          game.winners.push({ id: player.id, name: player.name });
+          hasWinner = true;
+        }
       }
     }
+  }
+
+  if (hasWinner) {
+    // Add a small delay to allow the clients to render the last number called
+    setTimeout(() => {
+      console.log(`🎉 Winner(s) found: ${game.winners.map(w => w.name).join(', ')} in room ${roomCode}`);
+      io.to(roomCode).emit("players-won", game.winners);
+    }, 100); // 100ms delay
   }
 
   game.players.forEach((player) => {
@@ -261,7 +286,6 @@ function rollNumber(io, socket, numberCalled, roomCode) {
     }
   });
 
-  io.to(roomCode).emit("number-called", game.numberCalled);
 
   if (game.hostSocketId && game.hostConnected) {
     io.to(game.hostSocketId).emit("players", game.players);
@@ -278,3 +302,4 @@ module.exports = {
   leaveGame,
   endGame,
 };
+
