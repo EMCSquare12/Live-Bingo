@@ -15,8 +15,13 @@ const GameProvider = ({ children }) => {
   };
   const initialPlayerState = { id: "", name: "", cards: [], result: [] };
   const initialHostState = {
-    id: "", isHost: false, hostName: "", cardNumber: 1,
-    numberCalled: [], cardWinningPattern: { name: "", index: [] }, players: [],
+    id: "",
+    isHost: false,
+    hostName: "",
+    cardNumber: 1,
+    numberCalled: [],
+    cardWinningPattern: { name: "", index: [] },
+    players: [],
   };
 
   const [bingoNumbers, setBingoNumbers] = useState(initialBingoNumbers);
@@ -37,13 +42,20 @@ const GameProvider = ({ children }) => {
   useEffect(() => {
     const session = JSON.parse(sessionStorage.getItem("bingo-session"));
     if (session && session.roomCode) {
-      socket.emit("reconnect-player", session.roomCode, session.id, session.isHost);
+      socket.emit(
+        "reconnect-player",
+        session.roomCode,
+        session.id,
+        session.isHost
+      );
     } else {
       setIsLoading(false);
     }
 
     const handleSessionReconnect = (game) => {
-      const currentSession = JSON.parse(sessionStorage.getItem("bingo-session"));
+      const currentSession = JSON.parse(
+        sessionStorage.getItem("bingo-session")
+      );
       setRoomCode(game.roomCode);
       setHost({
         id: game.hostId,
@@ -55,14 +67,21 @@ const GameProvider = ({ children }) => {
         players: game.players,
       });
       const allNumbers = [...Array(75)].map((_, i) => i + 1);
-      const remainingNumbers = allNumbers.filter(num => !game.numberCalled.includes(num));
-      const lastCalledNumber = game.numberCalled.length > 0 ? game.numberCalled[game.numberCalled.length - 1] : null;
+      const remainingNumbers = allNumbers.filter(
+        (num) => !game.numberCalled.includes(num)
+      );
+      const lastCalledNumber =
+        game.numberCalled.length > 0
+          ? game.numberCalled[game.numberCalled.length - 1]
+          : null;
       setBingoNumbers({
         array: remainingNumbers,
         randomNumber: lastCalledNumber,
       });
       if (currentSession && !currentSession.isHost) {
-        const currentPlayer = game.players.find(p => p.id === currentSession.id);
+        const currentPlayer = game.players.find(
+          (p) => p.id === currentSession.id
+        );
         if (currentPlayer) {
           setPlayer(currentPlayer);
         }
@@ -73,7 +92,7 @@ const GameProvider = ({ children }) => {
     const handleReconnectFailed = (message) => {
       console.error("Reconnect failed:", message);
       sessionStorage.removeItem("bingo-session");
-      setHost(prev => ({ ...prev, isHost: false, id: "" }));
+      setHost((prev) => ({ ...prev, isHost: false, id: "" }));
       setIsLoading(false);
     };
 
@@ -84,7 +103,7 @@ const GameProvider = ({ children }) => {
         setWinMessage(`${winnerName} wins the game!`);
       }
     };
-    
+
     const handleGameReset = (game) => {
       console.log("Client received game-reset event");
       setBingoNumbers({
@@ -92,7 +111,7 @@ const GameProvider = ({ children }) => {
         randomNumber: null,
       });
       setWinMessage("");
-      setHost(prev => ({
+      setHost((prev) => ({
         ...prev,
         numberCalled: game.numberCalled,
         winner: game.winner,
@@ -127,11 +146,33 @@ const GameProvider = ({ children }) => {
 
   const value = useMemo(
     () => ({
-      isOpenModal, setIsOpenModal, host, setHost, bingoNumbers, setBingoNumbers,
-      player, setPlayer, roomCode, setRoomCode, isLoading, winMessage, setWinMessage,
-      isNewGameModalVisible, setIsNewGameModalVisible, resetGame,
+      isOpenModal,
+      setIsOpenModal,
+      host,
+      setHost,
+      bingoNumbers,
+      setBingoNumbers,
+      player,
+      setPlayer,
+      roomCode,
+      setRoomCode,
+      isLoading,
+      winMessage,
+      setWinMessage,
+      isNewGameModalVisible,
+      setIsNewGameModalVisible,
+      resetGame,
     }),
-    [isOpenModal, host, roomCode, player, bingoNumbers, isLoading, winMessage, isNewGameModalVisible]
+    [
+      isOpenModal,
+      host,
+      roomCode,
+      player,
+      bingoNumbers,
+      isLoading,
+      winMessage,
+      isNewGameModalVisible,
+    ]
   );
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;

@@ -12,21 +12,28 @@ function Header() {
   const [isClickSound, setIsClickSound] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
   const { setIsOpenModal, isOpenModal, host, resetGame, roomCode } =
-    useContext(GameContext); // Get resetGame from context
+    useContext(GameContext);
 
   const handleNewGame = () => {
-    // This function will now emit the event to the server
     if (roomCode) {
       socket.emit("new-game", roomCode);
     }
   };
+
   const handleLeaveGame = () => {
-    // If the user is a player, explicitly tell the server they are leaving.
     if (!host.isHost) {
+      // Player is leaving: wait for server acknowledgement
+      socket.once("leave-acknowledged", () => {
+        resetGame();
+        navigate("/");
+      });
       socket.emit("leave-game");
+    } else {
+      // Host is leaving: notify server and navigate immediately
+      socket.emit("host-leave", roomCode);
+      resetGame();
+      navigate("/");
     }
-    resetGame(); // Reset the local state
-    navigate("/"); // Navigate to the homepage
   };
 
   return (
@@ -76,7 +83,7 @@ function Header() {
           )}
 
           <button
-            onClick={handleLeaveGame} // Use the new handler here
+            onClick={handleLeaveGame}
             className="px-3 font-medium text-gray-400 text-md font-inter hover:rounded-md hover:bg-gray-700 hover:text-gray-100"
           >
             Leave game
