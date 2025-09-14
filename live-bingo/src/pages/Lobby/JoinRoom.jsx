@@ -7,37 +7,48 @@ function JoinRoom() {
   const [errors, setErrors] = useState({}); // State for validation errors
   const [isJoining, setIsJoining] = useState(false); // State to handle submission status
   const navigate = useNavigate();
-  const { setRoomCode, roomCode, player, setPlayer } = useContext(GameContext);
+  const { setRoomCode, roomCode, player, setPlayer, setHost } =
+    useContext(GameContext);
 
   // This effect hook handles the responses from the server after trying to join.
   useEffect(() => {
-    // This function is called if the server says the room doesn't exist.
     const handleRoomNotFound = (message) => {
-      setErrors((prev) => ({ ...prev, roomCode: message }));
-      setIsJoining(false); // Re-enable the join button
+      setErrors((prev) => ({ ...prev, roomCode: message, type: "error" }));
+      setIsJoining(false);
+    };
+
+    const handleGameStarted = (message) => {
+      setErrors((prev) => ({ ...prev, roomCode: message, type: "warning" }));
+      setIsJoining(false);
     };
 
     // This function is called if the server successfully joins the player to the room.
-    const handleJoinedRoom = (joinedRoomCode, newPlayer) => {
-      console.log("✅ joined-room received:", joinedRoomCode, newPlayer);
+    const handleJoinedRoom = (joinedRoomCode, gameState) => {
+      console.log("✅ joined-room received:", joinedRoomCode, gameState);
+      const { newPlayer, ...hostState } = gameState;
+
       setRoomCode(joinedRoomCode);
       setPlayer(newPlayer);
+      setHost({
+        ...hostState,
+        isHost: false, // Ensure player is not marked as host
+      });
+
       setIsJoining(false); // Re-enable on success before navigating
       navigate(`/${joinedRoomCode}/${newPlayer.id}`);
     };
 
-    // We set up the listeners for both success and failure cases.
     socket.on("room-not-found", handleRoomNotFound);
+    socket.on("game-started", handleGameStarted);
     socket.on("joined-room", handleJoinedRoom);
 
-    // Cleanup: This runs when the component is removed, preventing memory leaks.
     return () => {
       socket.off("room-not-found", handleRoomNotFound);
+      socket.off("game-started", handleGameStarted);
       socket.off("joined-room", handleJoinedRoom);
     };
-  }, [navigate, setPlayer, setRoomCode]); // Dependencies ensure the hook has the latest functions.
+  }, [navigate, setPlayer, setRoomCode, setHost]);
 
-  // Validates that the inputs are not empty.
   const validateInputs = () => {
     const newErrors = {};
     if (!roomCode.trim()) {
@@ -52,19 +63,17 @@ function JoinRoom() {
 
   const handleJoin = () => {
     if (!validateInputs()) {
-      return; // Stop if client-side validation fails
+      return;
     }
-    setIsJoining(true); // Disable the button to prevent multiple clicks
-    setErrors({}); // Clear previous errors on a new attempt
+    setIsJoining(true);
+    setErrors({});
     socket.emit("join-room", player.name, roomCode);
   };
 
   const handleRoomCodeChange = (value) => {
-    // Clear the error message when the user starts typing again.
     if (errors.roomCode) {
       setErrors((prev) => ({ ...prev, roomCode: null }));
     }
-    // Automatically convert to uppercase for consistency with server
     setRoomCode(value.toUpperCase());
   };
 
@@ -74,6 +83,17 @@ function JoinRoom() {
     }
     setPlayer((prev) => ({ ...prev, name: value }));
   };
+
+  const roomCodeErrorClass = errors.roomCode
+    ? errors.type === "warning"
+      ? "ring-2 ring-yellow-500"
+      : "ring-2 ring-red-500"
+    : "focus:ring-2 focus:ring-blue-500";
+  const roomCodeTextClass = errors.roomCode
+    ? errors.type === "warning"
+      ? "text-yellow-500"
+      : "text-red-500"
+    : "";
 
   return (
     <div className="flex justify-center w-full h-full bg-gray-900 md:justify-start">
@@ -93,14 +113,12 @@ function JoinRoom() {
             onChange={(e) => handleRoomCodeChange(e.target.value)}
             id="roomCode"
             type="text"
-            className={`h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter w-72 ${
-              errors.roomCode
-                ? "ring-2 ring-red-500"
-                : "focus:ring-2 focus:ring-blue-500"
-            }`}
+            className={`h-10 px-4 text-gray-700 bg-gray-100 rounded-md outline-none font-inter w-72 ${roomCodeErrorClass}`}
           />
           {errors.roomCode && (
-            <p className="mt-1 text-xs text-red-500">{errors.roomCode}</p>
+            <p className={`mt-1 text-xs ${roomCodeTextClass}`}>
+              {errors.roomCode}
+            </p>
           )}
         </div>
         <div className="flex flex-col gap-2 pb-6">
@@ -127,7 +145,7 @@ function JoinRoom() {
         </div>
         <button
           onClick={handleJoin}
-          disabled={isJoining} // Disable button while joining
+          disabled={isJoining}
           className="flex items-center justify-center w-full h-12 text-lg font-medium bg-blue-600 rounded-md text-gray-50 hover:bg-blue-700 disabled:bg-gray-500 disabled:cursor-not-allowed"
         >
           {isJoining ? "Joining..." : "Join"}

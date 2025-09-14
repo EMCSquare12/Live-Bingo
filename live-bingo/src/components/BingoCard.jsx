@@ -1,10 +1,9 @@
 import { GiRoundStar } from "react-icons/gi";
 import { FiRefreshCw } from "react-icons/fi";
-import { socket } from "../utils/socket";
-import { useContext, useEffect, useState } from "react";
+import { useContext } from "react";
 import GameContext from "../context/GameContext";
 function BingoCard({ letterNumber, handleRefresh }) {
-  const { host, setHost } = useContext(GameContext);
+  const { host } = useContext(GameContext);
   const charStyle = [
     "text-blue-500",
     "text-red-500",
@@ -12,19 +11,6 @@ function BingoCard({ letterNumber, handleRefresh }) {
     "text-green-500",
     "text-yellow-500",
   ];
-
-  useEffect(() => {
-    const handleNumberCalled = (numberCalled) => {
-      setHost((prev) => ({ ...prev, numberCalled }));
-      console.log(numberCalled);
-    };
-
-    socket.on("number-called", handleNumberCalled);
-
-    return () => {
-      socket.off("number-called", handleNumberCalled);
-    };
-  }, []);
 
   return (
     <div className="relative flex flex-col gap-4 p-4 overflow-hidden bg-gray-600 rounded-lg shadow-lg w-fit h-fit">
@@ -70,7 +56,6 @@ function BingoCard({ letterNumber, handleRefresh }) {
           </div>
         ))}
       </div>
-
     </div>
   );
 }

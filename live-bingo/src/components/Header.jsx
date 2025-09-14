@@ -11,30 +11,57 @@ function Header() {
   const navigate = useNavigate();
   const [isClickSound, setIsClickSound] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
-  const { setIsOpenModal, isOpenModal, host, resetGame, roomCode } =
-    useContext(GameContext);
+  const {
+    setIsOpenModal,
+    isOpenModal,
+    host,
+    resetGame,
+    roomCode,
+    setConfirmation,
+  } = useContext(GameContext);
 
-  const handleNewGame = () => {
-    if (roomCode) {
-      socket.emit("new-game", roomCode);
-    }
+  const handleNewGameClick = () => {
+    setConfirmation({
+      isOpen: true,
+      message:
+        "Are you sure you want to start a new game? This will reset the current board.",
+      onConfirm: () => {
+        if (roomCode) {
+          socket.emit("new-game", roomCode);
+        }
+        setConfirmation({ isOpen: false }); // Close modal on confirm
+      },
+      onCancel: () => {
+        setConfirmation({ isOpen: false }); // Close modal on cancel
+      },
+    });
   };
 
-  const handleLeaveGame = () => {
-    if (!host.isHost) {
-      // Player is leaving: wait for server acknowledgement
-      socket.once("leave-acknowledged", () => {
-        resetGame();
-        navigate("/");
-      });
-      socket.emit("leave-game");
-    } else {
-      // Host is leaving: notify server and navigate immediately
-      socket.emit("host-leave", roomCode);
-      resetGame();
-      navigate("/");
-    }
+  const handleLeaveGameClick = () => {
+    setConfirmation({
+      isOpen: true,
+      message: "Are you sure you want to leave the game?",
+      onConfirm: () => {
+        if (!host.isHost) {
+          socket.once("leave-acknowledged", () => {
+            resetGame();
+            navigate("/");
+          });
+          socket.emit("leave-game");
+        } else {
+          socket.emit("host-leave", roomCode);
+          resetGame();
+          navigate("/");
+        }
+        setConfirmation({ isOpen: false });
+      },
+      onCancel: () => {
+        setConfirmation({ isOpen: false });
+      },
+    });
   };
+
+  const isGameStarted = host.numberCalled && host.numberCalled.length > 0;
 
   return (
     <>
@@ -52,12 +79,15 @@ function Header() {
           {isClicked && !isOpenModal ? (
             <div className="absolute flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full bg-gray-50 w-60">
               <WinningPatternCard />
-              <button
-                onClick={() => setIsOpenModal(true)}
-                className="mt-2 text-blue-600 underline hover:text-blue-700 text-md font-inter"
-              >
-                Change
-              </button>
+              {host.isHost && (
+                <button
+                  onClick={() => setIsOpenModal(true)}
+                  disabled={isGameStarted}
+                  className="mt-2 text-blue-600 underline text-md font-inter hover:text-blue-700 disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
+                >
+                  Change
+                </button>
+              )}
             </div>
           ) : null}
         </div>
@@ -75,7 +105,7 @@ function Header() {
 
           {host.isHost && (
             <button
-              onClick={handleNewGame}
+              onClick={handleNewGameClick}
               className="px-3 font-medium text-gray-100 bg-blue-600 rounded-md text-md font-inter hover:bg-blue-700"
             >
               New game
@@ -83,7 +113,7 @@ function Header() {
           )}
 
           <button
-            onClick={handleLeaveGame}
+            onClick={handleLeaveGameClick}
             className="px-3 font-medium text-gray-400 text-md font-inter hover:rounded-md hover:bg-gray-700 hover:text-gray-100"
           >
             Leave game

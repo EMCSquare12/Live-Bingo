@@ -1,26 +1,28 @@
 import { useContext } from "react";
 import { Outlet, useParams } from "react-router-dom";
-import GameContext from "../../context/GameContext.js"; // Corrected file extension
+import GameContext from "../../context/GameContext.js";
 import Header from "../../components/Header";
 import WinningPatternModal from "../../components/modal/WinningPatternModal";
 import WinnerModal from "../../components/modal/WinnerModal";
 import NoRoom from "./NoRoom";
 import NewGameModal from "../../components/modal/NewGameModal";
+import HostLeftModal from "../../components/modal/HostLeftModal.jsx";
+import ConfirmationModal from "../../components/modal/ConfirmationModal.jsx";
 
 function Game() {
   const {
     isOpenModal,
-    winner,
     isLoading,
     host,
     player,
     winMessage,
     isNewGameModalVisible,
+    isHostLeftModalVisible,
+    confirmation,
     roomCode: contextRoomCode,
   } = useContext(GameContext);
   const { roomCode: urlRoomCode, playerId: urlPlayerId } = useParams();
 
-  // Show a loading screen while the provider is trying to reconnect the session.
   if (isLoading) {
     return (
       <div className="flex items-center justify-center w-screen h-screen text-white bg-gray-900">
@@ -29,7 +31,6 @@ function Game() {
     );
   }
 
-  // Determine if the current user is authorized to be on this page.
   const isAuthorizedHost =
     host.isHost &&
     !urlPlayerId &&
@@ -40,12 +41,10 @@ function Game() {
     contextRoomCode?.toLowerCase() === urlRoomCode?.toLowerCase();
   const isAuthorized = isAuthorizedHost || isAuthorizedPlayer;
 
-  // If the user is NOT authorized, render the full-screen NoRoom component.
   if (!isAuthorized) {
     return <NoRoom />;
   }
 
-  // If they ARE authorized, render the game layout with the header.
   return (
     <div className="relative flex flex-col w-screen min-h-screen">
       <Header />
@@ -53,6 +52,14 @@ function Game() {
       {isOpenModal && <WinningPatternModal />}
       {winMessage && <WinnerModal />}
       {isNewGameModalVisible && <NewGameModal />}
+      {isHostLeftModalVisible && <HostLeftModal />}
+      {confirmation.isOpen && (
+        <ConfirmationModal
+          message={confirmation.message}
+          onConfirm={confirmation.onConfirm}
+          onCancel={confirmation.onCancel}
+        />
+      )}
     </div>
   );
 }

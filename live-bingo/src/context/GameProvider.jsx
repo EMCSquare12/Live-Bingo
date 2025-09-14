@@ -8,6 +8,13 @@ const GameProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [winMessage, setWinMessage] = useState("");
   const [isNewGameModalVisible, setIsNewGameModalVisible] = useState(false);
+  const [isHostLeftModalVisible, setIsHostLeftModalVisible] = useState(false);
+  const [confirmation, setConfirmation] = useState({
+    isOpen: false,
+    message: "",
+    onConfirm: () => {},
+    onCancel: () => {},
+  });
 
   const initialBingoNumbers = {
     array: [...Array(75)].map((_, i) => i + 1),
@@ -117,19 +124,27 @@ const GameProvider = ({ children }) => {
         winner: game.winner,
         players: game.players,
       }));
-      setIsNewGameModalVisible(true);
+      if (!host.isHost) {
+        setIsNewGameModalVisible(true);
+      }
+    };
+
+    const handleNumberCalled = (numberCalled) => {
+      setHost((prev) => ({ ...prev, numberCalled }));
     };
 
     socket.on("session-reconnected", handleSessionReconnect);
     socket.on("reconnect-failed", handleReconnectFailed);
     socket.on("player-won", handlePlayerWon);
     socket.on("game-reset", handleGameReset);
+    socket.on("number-called", handleNumberCalled);
 
     return () => {
       socket.off("session-reconnected", handleSessionReconnect);
       socket.off("reconnect-failed", handleReconnectFailed);
       socket.off("player-won", handlePlayerWon);
       socket.off("game-reset", handleGameReset);
+      socket.off("number-called", handleNumberCalled);
     };
   }, [player.id, host.isHost]);
 
@@ -161,6 +176,10 @@ const GameProvider = ({ children }) => {
       setWinMessage,
       isNewGameModalVisible,
       setIsNewGameModalVisible,
+      isHostLeftModalVisible,
+      setIsHostLeftModalVisible,
+      confirmation,
+      setConfirmation,
       resetGame,
     }),
     [
@@ -172,6 +191,8 @@ const GameProvider = ({ children }) => {
       isLoading,
       winMessage,
       isNewGameModalVisible,
+      isHostLeftModalVisible,
+      confirmation,
     ]
   );
 
