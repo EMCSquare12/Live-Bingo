@@ -1,16 +1,83 @@
-import { MdVolumeUp, MdVolumeOff } from "react-icons/md";
-import { FaCaretDown, FaCaretUp } from "react-icons/fa";
-import Logo from "./Logo";
+import Logo from "./Logo.jsx";
 import { useNavigate } from "react-router-dom";
-import { useContext, useState } from "react";
-import WinningPatternCard from "./WinningPatternCard";
+import { useContext, useState, useRef, useEffect } from "react";
+import WinningPatternCard from "./WinningPatternCard.jsx";
 import GameContext from "../context/GameContext.js";
 import { socket } from "../utils/socket.js";
+
+// SVG Icon Components to replace react-icons
+const MdVolumeUp = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="text-xl"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+    />
+  </svg>
+);
+
+const MdVolumeOff = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="text-xl"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
+      clipRule="evenodd"
+    />
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M17 14l2-2m0 0l2-2m-2 2L17 10"
+    />
+  </svg>
+);
+
+const FaCaretUp = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-4 h-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
+  </svg>
+);
+
+const FaCaretDown = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-4 h-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+  </svg>
+);
 
 function Header() {
   const navigate = useNavigate();
   const [isClickSound, setIsClickSound] = useState(false);
   const [isClicked, setIsClicked] = useState(false);
+  const dropdownRef = useRef(null); // Create a ref for the dropdown menu
+
   const {
     setIsOpenModal,
     isOpenModal,
@@ -19,6 +86,22 @@ function Header() {
     roomCode,
     setConfirmation,
   } = useContext(GameContext);
+
+  // This effect adds an event listener to detect clicks outside the dropdown.
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsClicked(false); // Close the dropdown if click is outside
+      }
+    };
+
+    // Add the event listener when the component mounts
+    document.addEventListener("mousedown", handleClickOutside);
+    // Remove the event listener when the component unmounts
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []); // Empty dependency array ensures this runs only once
 
   const handleNewGameClick = () => {
     setConfirmation({
@@ -49,9 +132,10 @@ function Header() {
           });
           socket.emit("leave-game");
         } else {
-          socket.emit("host-leave", roomCode);
+          // Immediately reset the game state and navigate for the host
           resetGame();
           navigate("/");
+          socket.emit("host-leave", roomCode);
         }
         setConfirmation({ isOpen: false });
       },
@@ -73,15 +157,21 @@ function Header() {
             onClick={() => setIsClicked(!isClicked)}
             className="flex items-center h-full gap-1 p-2 cursor-pointer hover:bg-gray-700"
           >
-            {host.cardWinningPattern.name}
+            {host.cardWinningPattern.name || "Customize"}
             {isClicked ? <FaCaretUp /> : <FaCaretDown />}
           </span>
           {isClicked && !isOpenModal ? (
-            <div className="absolute flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full bg-gray-50 w-60">
+            <div
+              ref={dropdownRef} // Attach the ref to the dropdown container
+              className="absolute flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full bg-gray-50 w-60"
+            >
               <WinningPatternCard />
               {host.isHost && (
                 <button
-                  onClick={() => setIsOpenModal(true)}
+                  onClick={() => {
+                    setIsOpenModal(true);
+                    setIsClicked(false); // Also close dropdown when opening modal
+                  }}
                   disabled={isGameStarted}
                   className="mt-2 text-blue-600 underline text-md font-inter hover:text-blue-700 disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
                 >
@@ -96,11 +186,7 @@ function Header() {
             onClick={() => setIsClickSound(!isClickSound)}
             className="flex items-center justify-center gap-1 px-3 font-medium text-gray-400 text-md font-inter hover:rounded-md hover:text-gray-100 hover:bg-gray-700"
           >
-            {isClickSound ? (
-              <MdVolumeOff className="text-xl" />
-            ) : (
-              <MdVolumeUp className="text-xl" />
-            )}
+            {isClickSound ? <MdVolumeOff /> : <MdVolumeUp />}
           </button>
 
           {host.isHost && (

@@ -29,6 +29,7 @@ const GameProvider = ({ children }) => {
     numberCalled: [],
     cardWinningPattern: { name: "", index: [] },
     players: [],
+    winners: [],
   };
 
   const [bingoNumbers, setBingoNumbers] = useState(initialBingoNumbers);
@@ -42,6 +43,7 @@ const GameProvider = ({ children }) => {
     setWinMessage("");
     setRoomCode("");
     setIsNewGameModalVisible(false);
+    setIsHostLeftModalVisible(false); // Reset the modal visibility state
     sessionStorage.removeItem("bingo-session");
     console.log("Game state has been reset.");
   };
@@ -72,6 +74,7 @@ const GameProvider = ({ children }) => {
         cardWinningPattern: game.cardWinningPattern,
         numberCalled: game.numberCalled,
         players: game.players,
+        winners: game.winners,
       });
       const allNumbers = [...Array(75)].map((_, i) => i + 1);
       const remainingNumbers = allNumbers.filter(
@@ -103,11 +106,23 @@ const GameProvider = ({ children }) => {
       setIsLoading(false);
     };
 
-    const handlePlayerWon = ({ winnerName, winnerId }) => {
-      if (player.id === winnerId) {
-        setWinMessage("BINGO! You are the winner!");
+    const handlePlayersWon = (winners) => {
+      setHost((prev) => ({ ...prev, winners }));
+      const amIWinner = winners.some((winner) => winner.id === player.id);
+
+      if (amIWinner) {
+        if (winners.length > 1) {
+          setWinMessage("BINGO! You and others have won!");
+        } else {
+          setWinMessage("BINGO! You are the winner!");
+        }
       } else {
-        setWinMessage(`${winnerName} wins the game!`);
+        const winnerNames = winners.map((w) => w.name).join(", ");
+        if (winners.length > 1) {
+          setWinMessage(`${winnerNames} are the winners!`);
+        } else {
+          setWinMessage(`${winnerNames} wins the game!`);
+        }
       }
     };
 
@@ -121,7 +136,7 @@ const GameProvider = ({ children }) => {
       setHost((prev) => ({
         ...prev,
         numberCalled: game.numberCalled,
-        winner: game.winner,
+        winners: game.winners,
         players: game.players,
       }));
       if (!host.isHost) {
@@ -135,14 +150,14 @@ const GameProvider = ({ children }) => {
 
     socket.on("session-reconnected", handleSessionReconnect);
     socket.on("reconnect-failed", handleReconnectFailed);
-    socket.on("player-won", handlePlayerWon);
+    socket.on("players-won", handlePlayersWon);
     socket.on("game-reset", handleGameReset);
     socket.on("number-called", handleNumberCalled);
 
     return () => {
       socket.off("session-reconnected", handleSessionReconnect);
       socket.off("reconnect-failed", handleReconnectFailed);
-      socket.off("player-won", handlePlayerWon);
+      socket.off("players-won", handlePlayersWon);
       socket.off("game-reset", handleGameReset);
       socket.off("number-called", handleNumberCalled);
     };

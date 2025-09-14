@@ -17,7 +17,8 @@ import { socket } from "./utils/socket";
 
 // This component lives inside the router and handles navigation events
 const NavigationHandler = () => {
-  const { host, setIsHostLeftModalVisible } = useContext(GameContext);
+  const { host, isHostLeftModalVisible, setIsHostLeftModalVisible } =
+    useContext(GameContext);
 
   useEffect(() => {
     const handleHostLeft = () => {

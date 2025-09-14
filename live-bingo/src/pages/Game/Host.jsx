@@ -2,7 +2,35 @@ import { useContext, useEffect, useState } from "react";
 import GameContext from "../../context/GameContext";
 import { useLocation } from "react-router-dom";
 import { socket } from "../../utils/socket";
-import { FaCopy, FaTrophy } from "react-icons/fa6";
+
+// SVG Icon Components to replace react-icons
+const FaCopy = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="w-4 h-4"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+    strokeWidth={2}
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+    />
+  </svg>
+);
+
+const FaTrophy = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="inline-block w-5 h-5 mr-2"
+    viewBox="0 0 20 20"
+    fill="currentColor"
+  >
+    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+  </svg>
+);
 
 function Host() {
   const [selectedPlayer, setSelectedPlayer] = useState(null);
@@ -103,7 +131,9 @@ function Host() {
   );
 
   const isRollDisabled =
-    isNewGameModalVisible || host.players.length < 2 || host.winner;
+    isNewGameModalVisible ||
+    host.players.length < 1 ||
+    (host.winners && host.winners.length > 0);
 
   return (
     <div className="flex flex-col items-center justify-between bg-gray-900">
@@ -119,7 +149,7 @@ function Host() {
             className="relative flex flex-row items-center gap-1 text-gray-50 hover:text-gray-300 "
           >
             {location.pathname.slice(1)}
-            <FaCopy className="w-4 h-4" />
+            <FaCopy />
             {copied && (
               <span className="absolute left-0 p-1 text-xs text-gray-300 bg-gray-600 bg-opacity-50 rounded-md w-fit -top-6">
                 Copied
@@ -153,9 +183,9 @@ function Host() {
           >
             Roll Number
           </button>
-          {host.players.length < 2 && (
+          {host.players.length < 1 && (
             <p className="mt-2 text-xs text-center text-yellow-400">
-              Waiting for at least 2 players to start.
+              Waiting for players to start.
             </p>
           )}
         </div>
@@ -198,7 +228,18 @@ function Host() {
               {host.players.length}
             </h1>
           </div>
-          <ul className="flex flex-col gap-1 px-4 mt-2">
+          {host.winners && host.winners.length > 0 && (
+            <div className="w-full px-4 py-2 mt-2 text-center bg-gray-700 rounded-lg">
+              <h2 className="text-lg font-bold text-yellow-300">
+                <FaTrophy />
+                Winner(s)!
+              </h2>
+              <p className="text-white">
+                {host.winners.map((w) => w.name).join(", ")}
+              </p>
+            </div>
+          )}
+          <ul className="flex flex-col gap-1 px-4 mt-2 overflow-y-auto max-h-96 hide-scrollbar">
             {sortedPlayers.map((player) => (
               <li
                 key={player.id}

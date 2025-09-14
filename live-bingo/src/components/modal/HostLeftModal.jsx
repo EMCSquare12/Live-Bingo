@@ -1,4 +1,4 @@
-import { useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import GameContext from "../../context/GameContext";
 
@@ -7,11 +7,11 @@ const HostLeftModal = () => {
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
 
-  const handleCloseAndRedirect = () => {
+  const handleCloseAndRedirect = useCallback(() => {
     setIsHostLeftModalVisible(false);
     resetGame();
     navigate("/");
-  };
+  }, [setIsHostLeftModalVisible, resetGame, navigate]);
 
   useEffect(() => {
     if (countdown === 0) {
