@@ -149,7 +149,7 @@ function Header() {
 
   return (
     <>
-      <div className="flex justify-between w-screen px-2 py-2 bg-gray-800 border-b border-gray-900 h-fit md:px-8">
+      <div className="flex justify-between w-screen px-2 py-3 bg-gray-800 border-b border-gray-900 h-fit md:px-8">
         <Logo />
         <div className="relative z-10 flex items-center justify-center gap-2 px-3 -mt-2 -mb-2 font-medium text-gray-300 w-fit text-md font-inter ">
           Winning Pattern:{" "}

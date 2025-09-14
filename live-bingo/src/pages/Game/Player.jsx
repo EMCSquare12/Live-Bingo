@@ -1,14 +1,17 @@
 import { useContext, useState } from "react";
 import BingoCard from "../../components/BingoCard";
 import GameContext from "../../context/GameContext";
+import { socket } from "../../utils/socket";
 
 function Player() {
   const { player, host, isShuffling, displayNumber, roomCode } =
     useContext(GameContext);
-  const [isRefreshed, setIsRefreshed] = useState(false);
   const [copied, setCopied] = useState(false);
   const cards = player.cards ?? [];
 
+  const handleRefresh = (cardIndex) => {
+    socket.emit("request-new-card", roomCode, player.id, cardIndex);
+  };
   const columns = [
     {
       label: "B",
@@ -159,7 +162,7 @@ function Player() {
             <BingoCard
               key={index}
               letterNumber={value}
-              handleRefresh={() => setIsRefreshed(!isRefreshed)}
+              handleRefresh={() => handleRefresh(index)}
             />
           ))}
         </div>

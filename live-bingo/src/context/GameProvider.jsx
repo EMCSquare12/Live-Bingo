@@ -125,7 +125,12 @@ const GameProvider = ({ children }) => {
       setIsLoading(false);
       setIsReconnecting(false);
     };
-
+    const handleCardRefreshed = (newCards) => {
+      setPlayer((prev) => ({
+        ...prev,
+        cards: newCards,
+      }));
+    };
     const handlePlayersWon = (winners) => {
       setHost((prev) => ({ ...prev, winners }));
       const amIWinner = winners.some((winner) => winner.id === player.id);
@@ -190,13 +195,14 @@ const GameProvider = ({ children }) => {
 
     socket.on("shuffling", handleShuffling);
     socket.on("number-called", handleNumberCalled);
-
+    socket.on("card-refreshed", handleCardRefreshed);
     socket.on("session-reconnected", handleSessionReconnect);
     socket.on("reconnect-failed", handleReconnectFailed);
     socket.on("players-won", handlePlayersWon);
     socket.on("game-reset", handleGameReset);
 
     return () => {
+      socket.off("card-refreshed", handleCardRefreshed);
       socket.off("session-reconnected", handleSessionReconnect);
       socket.off("reconnect-failed", handleReconnectFailed);
       socket.off("players-won", handlePlayersWon);

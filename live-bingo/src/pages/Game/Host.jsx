@@ -34,6 +34,7 @@ const FaTrophy = () => (
 
 function Host() {
   const [copied, setCopied] = useState(false);
+  const [openPlayerId, setOpenPlayerId] = useState(null); // New state to track open dropdown
   const {
     host,
     setHost,
@@ -103,6 +104,16 @@ function Host() {
       window.removeEventListener("keydown", handleKeyPress);
     };
   }, [handleRollNumber]);
+
+  const handlePlayerClick = (playerId) => {
+    setOpenPlayerId(openPlayerId === playerId ? null : playerId);
+  };
+  const getNumberColor = (number) => {
+    const column = columns.find(
+      (c) => number >= c.range[0] && number <= c.range[1]
+    );
+    return column ? column.bgColor : "bg-gray-500";
+  };
 
   const finalRolledNumber = host.numberCalled.at(-1);
   const currentCol =
@@ -242,14 +253,38 @@ function Host() {
             {sortedPlayers.map((player) => (
               <li
                 key={player.id}
-                className="flex flex-row gap-6 p-1 text-xs font-normal text-gray-300 border-b border-gray-500 rounded-md cursor-pointer font-inter hover:bg-gray-500"
+                className="flex flex-col p-1 text-xs font-normal text-gray-300 border-b border-gray-500 rounded-md cursor-pointer font-inter hover:bg-gray-500"
+                onClick={() => handlePlayerClick(player.id)}
               >
-                <div className="flex items-center w-24 gap-2">
-                  <span>{player.name}</span>
+                <div className="flex flex-row items-center gap-6">
+                  <div className="flex items-center w-24 gap-2">
+                    <span>{player.name}</span>
+                  </div>
+                  <div className="flex items-start justify-center -ml-3 h-fit w-fit">
+                    {player.result.length}
+                  </div>
                 </div>
-                <div className="flex items-start justify-center -ml-3 h-fit w-fit">
-                  {player.result.length}
-                </div>
+                {openPlayerId === player.id && (
+                  <div className="p-2 mt-2 bg-gray-700 rounded-md">
+                    <p className="font-medium text-gray-400">
+                      Remaining Numbers:
+                    </p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {player.result
+                        .sort((a, b) => a - b)
+                        .map((num, index) => (
+                          <span
+                            key={index}
+                            className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5 ${getNumberColor(
+                              num
+                            )}`}
+                          >
+                            {num}
+                          </span>
+                        ))}
+                    </div>
+                  </div>
+                )}
               </li>
             ))}
           </ul>
