@@ -17,15 +17,13 @@ import { socket } from "./utils/socket";
 
 // This component lives inside the router and handles navigation events
 const NavigationHandler = () => {
-  const { host, isHostLeftModalVisible, setIsHostLeftModalVisible } =
-    useContext(GameContext);
+  const { host, setIsHostLeftModalVisible } = useContext(GameContext);
 
   useEffect(() => {
     const handleHostLeft = () => {
-      if (!host.isHost) {
-        console.log("[Client] The host has left the game. Showing modal.");
-        setIsHostLeftModalVisible(true);
-      }
+      // No need to check for host.isHost, as this event is only sent to players
+      console.log("[Client] The host has left the game. Showing modal.");
+      setIsHostLeftModalVisible(true);
     };
 
     socket.on("host-left", handleHostLeft);
@@ -33,7 +31,7 @@ const NavigationHandler = () => {
     return () => {
       socket.off("host-left", handleHostLeft);
     };
-  }, [host.isHost, setIsHostLeftModalVisible]);
+  }, [setIsHostLeftModalVisible]);
 
   return null;
 };

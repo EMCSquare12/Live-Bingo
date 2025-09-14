@@ -35,12 +35,34 @@ function HostRoom() {
       host.cardNumber,
       host.cardWinningPattern
     );
-    socket.once("room-created", (roomCode, hostId) => {
+  };
+
+  useEffect(() => {
+    const handleRoomCreated = (roomCode, hostId) => {
       setRoomCode(roomCode);
       setHost((prev) => ({ ...prev, id: hostId, isHost: true }));
       navigate(`/${roomCode}`);
-    });
-  };
+    };
+
+    socket.on("room-created", handleRoomCreated);
+
+    return () => {
+      socket.off("room-created", handleRoomCreated);
+    };
+  }, [navigate, setHost, setRoomCode]);
+
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        hostGame();
+      }
+    };
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [host]); // Re-bind listener if host state changes
 
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
@@ -202,13 +224,17 @@ function HostRoom() {
               value="Customize"
               className="w-5 h-5 rounded-md outline-none"
               onClick={(e) => handleCardPattern(e.target.value)}
-              checked={host.cardWinningPattern.name && host.cardWinningPattern.name !== "Blackout"}
+              checked={
+                host.cardWinningPattern.name &&
+                host.cardWinningPattern.name !== "Blackout"
+              }
             />
             <label
               htmlFor="customize"
               className="text-sm font-normal cursor-pointer text-gray-50 w-fit font-inter"
             >
-              {host.cardWinningPattern.name && host.cardWinningPattern.name !== "Blackout"
+              {host.cardWinningPattern.name &&
+              host.cardWinningPattern.name !== "Blackout"
                 ? host.cardWinningPattern.name
                 : "Customize"}
             </label>

@@ -6,7 +6,7 @@ const GameProvider = ({ children }) => {
   const [roomCode, setRoomCode] = useState("");
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isReconnecting, setIsReconnecting] = useState(false); // New state for reconnection
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const [winMessage, setWinMessage] = useState("");
   const [isNewGameModalVisible, setIsNewGameModalVisible] = useState(false);
   const [isHostLeftModalVisible, setIsHostLeftModalVisible] = useState(false);
@@ -44,15 +44,18 @@ const GameProvider = ({ children }) => {
     setWinMessage("");
     setRoomCode("");
     setIsNewGameModalVisible(false);
-    setIsHostLeftModalVisible(false); // Reset the modal visibility state
+    setIsHostLeftModalVisible(false);
     sessionStorage.removeItem("bingo-session");
-    console.log("Game state has been reset.");
+    // Disconnect and reconnect the socket to ensure a clean state
+    socket.disconnect();
+    socket.connect();
+    console.log("Game state has been reset and socket reconnected.");
   };
 
   useEffect(() => {
     const session = JSON.parse(sessionStorage.getItem("bingo-session"));
     if (session && session.roomCode) {
-      setIsReconnecting(true); // Start reconnection process
+      setIsReconnecting(true);
       socket.emit(
         "reconnect-player",
         session.roomCode,
@@ -99,13 +102,13 @@ const GameProvider = ({ children }) => {
         }
       }
       setIsLoading(false);
-      setIsReconnecting(false); // End reconnection process
+      setIsReconnecting(false);
     };
 
     const handleReconnectFailed = (message) => {
       console.error("Reconnect failed:", message);
       setIsLoading(false);
-      setIsReconnecting(false); // End reconnection process
+      setIsReconnecting(false);
     };
 
     const handlePlayersWon = (winners) => {
@@ -189,7 +192,7 @@ const GameProvider = ({ children }) => {
       roomCode,
       setRoomCode,
       isLoading,
-      isReconnecting, // Pass down new state
+      isReconnecting,
       winMessage,
       setWinMessage,
       isNewGameModalVisible,

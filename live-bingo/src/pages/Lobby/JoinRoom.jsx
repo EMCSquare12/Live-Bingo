@@ -70,6 +70,20 @@ function JoinRoom() {
     socket.emit("join-room", player.name, roomCode);
   };
 
+  // Effect to handle 'Enter' key press
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault(); // Prevent default form submission
+        handleJoin();
+      }
+    };
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [roomCode, player.name]); // Re-bind listener if these change
+
   const handleRoomCodeChange = (value) => {
     if (errors.roomCode) {
       setErrors((prev) => ({ ...prev, roomCode: null }));
