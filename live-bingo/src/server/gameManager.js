@@ -27,7 +27,7 @@ function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
     hostConnected: true,
     cardNumber,
     cardWinningPattern,
-    numberCalled: [],
+    numberCalled: [null], // Initialize with null for the "FREE" space
     players: [],
     winner: null,
     isNewRoundStarting: false,
@@ -41,18 +41,37 @@ function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
 function joinRoom(io, socket, playerName, roomCode) {
   const game = games[roomCode];
   if (!game) {
-    socket.emit("error", "Room does not exist");
+    socket.emit("room-not-found", "Room code doesn't exist.");
+    return;
+  }
+
+  if (game.numberCalled.length > 1) {
+    // Changed to > 1 to allow joining before first roll
+    socket.emit("game-started", "The game has already started in this room.");
     return;
   }
 
   const cards = Array.from({ length: game.cardNumber }, generateCard);
   const playerId = uuidv4();
-  const player = { id: playerId, socketId: socket.id, name: playerName, cards, result: [], connected: true };
+  const allNumbersOnCard =
+    cards.length > 0
+      ? Object.values(cards[0])
+        .flat()
+        .filter((n) => n !== null)
+      : [];
+  const player = {
+    id: playerId,
+    socketId: socket.id,
+    name: playerName,
+    cards,
+    result: allNumbersOnCard,
+    connected: true,
+  };
 
   game.players.push(player);
 
   socket.join(roomCode);
-  socket.emit("joined-room", roomCode, player);
+  socket.emit("joined-room", roomCode, { ...game, newPlayer: player });
 
   if (game.hostSocketId) {
     io.to(game.hostSocketId).emit("players", game.players);
@@ -69,13 +88,17 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
   socket.join(roomCode);
 
   if (isHost && game.hostId === persistentId) {
-    console.log(`Host ${game.hostName} reconnected. New socket ID: ${socket.id}`);
+    console.log(
+      `Host ${game.hostName} reconnected. New socket ID: ${socket.id}`
+    );
     game.hostSocketId = socket.id;
     game.hostConnected = true;
   } else if (!isHost) {
     const player = game.players.find((p) => p.id === persistentId);
     if (player) {
-      console.log(`Player ${player.name} reconnected. New socket ID: ${socket.id}`);
+      console.log(
+        `Player ${player.name} reconnected. New socket ID: ${socket.id}`
+      );
       player.socketId = socket.id;
       player.connected = true;
     } else {
@@ -96,10 +119,12 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
 
 function leaveGame(io, socket) {
   for (const [roomCode, game] of Object.entries(games)) {
-    const playerIndex = game.players.findIndex(p => p.socketId === socket.id);
+    const playerIndex = game.players.findIndex((p) => p.socketId === socket.id);
     if (playerIndex !== -1) {
       const removedPlayer = game.players.splice(playerIndex, 1)[0];
-      console.log(`Player ${removedPlayer.name} intentionally left room ${roomCode}.`);
+      console.log(
+        `Player ${removedPlayer.name} intentionally left room ${roomCode}.`
+      );
 
       if (game.hostSocketId && game.hostConnected) {
         io.to(game.hostSocketId).emit("player-left", removedPlayer.name);
@@ -145,13 +170,13 @@ function newGame(io, socket, roomCode) {
   console.log(`✨ Starting a new game in room ${roomCode}`);
 
   game.isNewRoundStarting = true;
-  game.numberCalled = [];
+  game.numberCalled = [null]; // Reset with null for the "FREE" space
   game.winner = null;
 
-  game.players.forEach(player => {
+  game.players.forEach((player) => {
     if (player.cards.length > 0) {
       const allNumbersOnCard = Object.values(player.cards[0]).flat();
-      player.result = allNumbersOnCard;
+      player.result = allNumbersOnCard.filter((n) => n !== null);
     } else {
       player.result = [];
     }
@@ -168,7 +193,13 @@ function newGame(io, socket, roomCode) {
 
 function rollNumber(io, socket, numberCalled, roomCode) {
   const game = games[roomCode];
-  if (!game || !numberCalled || game.winner || game.isNewRoundStarting || game.players.length < 2) {
+  if (
+    !game ||
+    !numberCalled ||
+    game.winner ||
+    game.isNewRoundStarting ||
+    game.players.length < 2
+  ) {
     console.log("Roll blocked. Conditions not met.");
     return;
   }
@@ -181,31 +212,52 @@ function rollNumber(io, socket, numberCalled, roomCode) {
 
   for (const player of game.players) {
     for (const card of player.cards) {
-      const cardNumbers = [...card.B, ...card.I, ...card.N, ...card.G, ...card.O];
-      const requiredNumbers = winningPatternIndices.map(index => cardNumbers[index]);
-      const isWinner = requiredNumbers.every(num => game.numberCalled.includes(num));
+      const cardNumbers = [
+        ...card.B,
+        ...card.I,
+        ...card.N,
+        ...card.G,
+        ...card.O,
+      ];
+      const requiredNumbers = winningPatternIndices.map(
+        (index) => cardNumbers[index]
+      );
+      const isWinner = requiredNumbers.every((num) =>
+        game.numberCalled.includes(num)
+      );
 
       if (isWinner) {
         game.winner = { id: player.id, name: player.name };
         console.log(`🎉 Winner found: ${player.name} in room ${roomCode}`);
-        io.to(roomCode).emit('player-won', { winnerName: player.name, winnerId: player.id });
+        io.to(roomCode).emit("player-won", {
+          winnerName: player.name,
+          winnerId: player.id,
+        });
         return;
       }
     }
   }
 
-  game.players.forEach(player => {
+  game.players.forEach((player) => {
     if (player.cards.length >= 2) {
       const bestCard = player.cards.reduce((best, current) => {
-        const bestMatches = Object.values(best).flat().filter(num => game.numberCalled.includes(num)).length;
-        const currentMatches = Object.values(current).flat().filter(num => game.numberCalled.includes(num)).length;
+        const bestMatches = Object.values(best)
+          .flat()
+          .filter((num) => game.numberCalled.includes(num)).length;
+        const currentMatches = Object.values(current)
+          .flat()
+          .filter((num) => game.numberCalled.includes(num)).length;
         return currentMatches >= bestMatches ? current : best;
       });
       const allNumbersOnBestCard = Object.values(bestCard).flat();
-      player.result = allNumbersOnBestCard.filter(n => !game.numberCalled.includes(n));
+      player.result = allNumbersOnBestCard.filter(
+        (n) => !game.numberCalled.includes(n)
+      );
     } else if (player.cards.length === 1) {
       const allNumbersOnCard = Object.values(player.cards[0]).flat();
-      player.result = allNumbersOnCard.filter(n => !game.numberCalled.includes(n));
+      player.result = allNumbersOnCard.filter(
+        (n) => !game.numberCalled.includes(n)
+      );
     }
   });
 
@@ -216,4 +268,13 @@ function rollNumber(io, socket, numberCalled, roomCode) {
   }
 }
 
-module.exports = { createRoom, joinRoom, rollNumber, handleDisconnect, reconnectPlayer, newGame, leaveGame, endGame };
+module.exports = {
+  createRoom,
+  joinRoom,
+  rollNumber,
+  handleDisconnect,
+  reconnectPlayer,
+  newGame,
+  leaveGame,
+  endGame,
+};

@@ -9,10 +9,13 @@ function generateUniqueNumbers(min, max, count) {
 }
 
 function generateCard() {
+  const nColumn = generateUniqueNumbers(31, 45, 4);
+  nColumn.splice(2, 0, null); // Insert null for the FREE space at the middle index
+
   return {
     B: generateUniqueNumbers(1, 15, 5),
     I: generateUniqueNumbers(16, 30, 5),
-    N: generateUniqueNumbers(31, 45, 5),
+    N: nColumn,
     G: generateUniqueNumbers(46, 60, 5),
     O: generateUniqueNumbers(61, 75, 5),
   };
