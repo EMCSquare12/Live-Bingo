@@ -3,6 +3,19 @@ const { generateCard } = require("./utils");
 
 let games = {}; // All active games stored in memory
 
+function endGame(io, roomCode) {
+  const game = games[roomCode];
+  if (game) {
+    console.log(`Host is ending the game in room ${roomCode}.`);
+    // Notify all players in the room that the host has left
+    io.to(roomCode).emit("host-left");
+
+    // Clean up the game room from memory
+    delete games[roomCode];
+    console.log(`🧹 Room ${roomCode} has been closed and removed.`);
+  }
+}
+
 function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
   const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
   const hostId = uuidv4();
@@ -82,39 +95,43 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
 }
 
 function leaveGame(io, socket) {
-    for (const [roomCode, game] of Object.entries(games)) {
-      const playerIndex = game.players.findIndex(p => p.socketId === socket.id);
-      if (playerIndex !== -1) {
-        const removedPlayer = game.players.splice(playerIndex, 1)[0];
-        console.log(`Player ${removedPlayer.name} intentionally left room ${roomCode}.`);
-        
-        if (game.hostSocketId && game.hostConnected) {
-          io.to(game.hostSocketId).emit("players", game.players);
-        }
-        break;
+  for (const [roomCode, game] of Object.entries(games)) {
+    const playerIndex = game.players.findIndex(p => p.socketId === socket.id);
+    if (playerIndex !== -1) {
+      const removedPlayer = game.players.splice(playerIndex, 1)[0];
+      console.log(`Player ${removedPlayer.name} intentionally left room ${roomCode}.`);
+
+      if (game.hostSocketId && game.hostConnected) {
+        io.to(game.hostSocketId).emit("player-left", removedPlayer.name);
+        io.to(game.hostSocketId).emit("players", game.players);
       }
+
+      // Acknowledge the leave to the client so it can safely navigate
+      socket.emit("leave-acknowledged");
+
+      break;
     }
+  }
 }
 
 function handleDisconnect(io, socket) {
   console.log(`❌ Client disconnected: ${socket.id}`);
 
-  for (const game of Object.values(games)) {
+  for (const [roomCode, game] of Object.entries(games)) {
     if (game.hostSocketId === socket.id) {
-      console.log(`Host of room ${game.hostId} disconnected.`);
-      game.hostConnected = false;
+      endGame(io, roomCode);
       break;
     }
 
     const playerIndex = game.players.findIndex((p) => p.socketId === socket.id);
     if (playerIndex !== -1) {
-        const player = game.players[playerIndex];
-        console.log(`Player ${player.name} temporarily disconnected.`);
-        player.connected = false;
-        if (game.hostSocketId && game.hostConnected) {
-            io.to(game.hostSocketId).emit("players", game.players);
-        }
-        break;
+      const player = game.players[playerIndex];
+      console.log(`Player ${player.name} temporarily disconnected.`);
+      player.connected = false;
+      if (game.hostSocketId && game.hostConnected) {
+        io.to(game.hostSocketId).emit("players", game.players);
+      }
+      break;
     }
   }
 }
@@ -133,10 +150,10 @@ function newGame(io, socket, roomCode) {
 
   game.players.forEach(player => {
     if (player.cards.length > 0) {
-        const allNumbersOnCard = Object.values(player.cards[0]).flat();
-        player.result = allNumbersOnCard;
+      const allNumbersOnCard = Object.values(player.cards[0]).flat();
+      player.result = allNumbersOnCard;
     } else {
-        player.result = [];
+      player.result = [];
     }
   });
 
@@ -199,4 +216,4 @@ function rollNumber(io, socket, numberCalled, roomCode) {
   }
 }
 
-module.exports = { createRoom, joinRoom, rollNumber, handleDisconnect, reconnectPlayer, newGame, leaveGame };
+module.exports = { createRoom, joinRoom, rollNumber, handleDisconnect, reconnectPlayer, newGame, leaveGame, endGame };
