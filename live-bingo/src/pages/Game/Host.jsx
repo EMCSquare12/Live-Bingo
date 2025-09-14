@@ -92,14 +92,26 @@ function Host() {
     socket.emit("request-new-number", roomCode);
   };
 
+  useEffect(() => {
+    const handleKeyPress = (event) => {
+      if (event.key === "Enter") {
+        handleRollNumber();
+      }
+    };
+    window.addEventListener("keydown", handleKeyPress);
+    return () => {
+      window.removeEventListener("keydown", handleKeyPress);
+    };
+  }, [handleRollNumber]);
+
   const finalRolledNumber = host.numberCalled.at(-1);
-  const currentCol = !isShuffling && finalRolledNumber
-    ? columns.find(
-        (c) =>
-          finalRolledNumber >= c.range[0] &&
-          finalRolledNumber <= c.range[1]
-      )
-    : null;
+  const currentCol =
+    !isShuffling && finalRolledNumber
+      ? columns.find(
+          (c) =>
+            finalRolledNumber >= c.range[0] && finalRolledNumber <= c.range[1]
+        )
+      : null;
 
   const handleCopy = async () => {
     try {
@@ -117,7 +129,7 @@ function Host() {
 
   const isRollDisabled =
     isNewGameModalVisible ||
-    host.players.length < 1 ||
+    host.players.length < 2 || // Changed from < 1 to < 2
     bingoNumbers.array.length === 0 ||
     (host.winners && host.winners.length > 0) ||
     isShuffling;

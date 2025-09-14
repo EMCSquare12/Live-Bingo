@@ -3,8 +3,10 @@ import BingoCard from "../../components/BingoCard";
 import GameContext from "../../context/GameContext";
 
 function Player() {
-  const { player, host, isShuffling, displayNumber } = useContext(GameContext);
+  const { player, host, isShuffling, displayNumber, roomCode } =
+    useContext(GameContext);
   const [isRefreshed, setIsRefreshed] = useState(false);
+  const [copied, setCopied] = useState(false);
   const cards = player.cards ?? [];
 
   const columns = [
@@ -40,6 +42,33 @@ function Player() {
     },
   ];
 
+  const FaCopy = () => (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-4 h-4"
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+      />
+    </svg>
+  );
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(roomCode);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
   const finalRolledNumber = host.numberCalled.at(-1);
   const col =
     !isShuffling && finalRolledNumber
@@ -51,10 +80,30 @@ function Player() {
 
   return (
     <div className="grid w-full h-full min-h-screen grid-cols-[40%_60%] bg-gray-900 items-start justify-start ">
-      <div className="flex flex-col h-full gap-6 p-10 bg-gray-800">
-        <h1 className="-mt-5 font-medium text-gray-300 text-md font-inter">
-          Player: {player.name}
-        </h1>
+      <div className="flex flex-col h-full gap-6 px-10 bg-gray-800">
+        <div className="flex flex-row items-center justify-between w-full p-4 -mb-6">
+          <h1 className="font-medium text-gray-300 text-md font-inter">
+            Player: {player.name}
+          </h1>
+          <h1 className="font-medium text-gray-300 text-md font-inter">
+            Host: {host.hostName}
+          </h1>
+          <h1 className="flex flex-row items-center gap-2 font-medium text-gray-300 text-md font-inter">
+            Room Code:{" "}
+            <button
+              onClick={handleCopy}
+              className="relative flex flex-row items-center gap-1 text-gray-50 hover:text-gray-300 "
+            >
+              {roomCode}
+              <FaCopy />
+              {copied && (
+                <span className="absolute left-0 p-1 text-xs text-gray-300 bg-gray-600 bg-opacity-50 rounded-md w-fit -bottom-6">
+                  Copied
+                </span>
+              )}
+            </button>
+          </h1>
+        </div>
         <div className="flex flex-row items-center justify-center gap-6 py-5 border-t border-b border-gray-500">
           {col && (
             <div
