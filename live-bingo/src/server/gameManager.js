@@ -255,6 +255,32 @@ function newGame(io, socket, roomCode) {
     }
   }, 5000);
 }
+function refreshCard(io, socket, roomCode, playerId, cardIndex) {
+  const game = games[roomCode];
+  if (!game) return;
+
+  const player = game.players.find((p) => p.id === playerId);
+  if (!player) return;
+
+  if (game.numberCalled.length > 1) {
+    // Game has started, do not allow card refresh.
+    return;
+  }
+
+  const newCard = generateCard();
+  player.cards[cardIndex] = newCard;
+
+  const allNumbersOnCard = Object.values(newCard)
+    .flat()
+    .filter((n) => n !== null);
+
+  player.result = allNumbersOnCard
+
+  socket.emit("card-refreshed", player.cards);
+  if (game.hostSocketId) {
+    io.to(game.hostSocketId).emit("players", game.players);
+  }
+}
 
 function rollNumber(io, socket, numberCalled, roomCode) {
   const game = games[roomCode];
@@ -351,4 +377,5 @@ module.exports = {
   leaveGame,
   endGame,
   rollAndShuffleNumber, // Export the new function
+  refreshCard
 };
