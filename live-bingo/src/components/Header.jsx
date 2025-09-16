@@ -126,7 +126,13 @@ function Header() {
       message: "Are you sure you want to leave the game?",
       onConfirm: () => {
         if (!host.isHost) {
+          const timeout = setTimeout(() => {
+            resetGame();
+            navigate("/");
+          }, 5000); // 5 seconds timeout
+
           socket.once("leave-acknowledged", () => {
+            clearTimeout(timeout);
             resetGame();
             navigate("/");
           });

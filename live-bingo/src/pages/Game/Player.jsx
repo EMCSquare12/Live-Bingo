@@ -85,17 +85,20 @@ function Player() {
     <div className="grid w-full h-full min-h-screen grid-cols-[40%_60%] bg-gray-900 items-start justify-start ">
       <div className="flex flex-col h-full gap-6 px-10 bg-gray-800">
         <div className="flex flex-row items-center justify-between w-full p-4 -mb-6">
-          <h1 className="font-medium text-gray-300 text-md font-inter">
-            Player: {player.name}
+           <div className="flex gap-1 flex-col">
+            <h1 className="font-medium text-gray-300 text-sm font-inter">
+            Player: <span className="text-gray-50 font-bold">{player.name}</span>
           </h1>
-          <h1 className="font-medium text-gray-300 text-md font-inter">
-            Host: {host.hostName}
+          <h1 className="font-medium text-gray-300 text-sm font-inter">
+            Host: <span className="text-gray-50 font-bold">{host.hostName}</span>
           </h1>
-          <h1 className="flex flex-row items-center gap-2 font-medium text-gray-300 text-md font-inter">
+          </div>
+          <div className="flex gap-1 flex-col">
+            <h1 className="flex flex-row items-center gap-2 font-medium text-gray-300 text-sm font-inter">
             Room Code:{" "}
             <button
               onClick={handleCopy}
-              className="relative flex flex-row items-center gap-1 text-gray-50 hover:text-gray-300 "
+              className="relative flex font-bold flex-row items-center gap-1 text-gray-50 hover:text-gray-300 "
             >
               {roomCode}
               <FaCopy />
@@ -106,6 +109,8 @@ function Player() {
               )}
             </button>
           </h1>
+          <h1 className="font-medium text-gray-300 text-sm font-inter">Card Number: <span className="text-gray-50 font-bold">{host.cardNumber}</span></h1>
+          </div>
         </div>
         <div className="flex flex-row items-center justify-center gap-6 py-5 border-t border-b border-gray-500">
           {col && (

@@ -156,7 +156,15 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
       );
       player.socketId = socket.id;
       player.connected = true;
-    } else {
+
+      // Clear the disconnect timeout if the player reconnects in time
+      if (player.disconnectTimeout) {
+        clearTimeout(player.disconnectTimeout);
+        player.disconnectTimeout = null;
+        console.log(`Disconnect timer for player ${player.name} in room ${roomCode} cleared.`);
+      }
+
+    }  else {
       socket.emit("reconnect-failed", "Player not found");
       return;
     }
@@ -213,7 +221,7 @@ function handleDisconnect(io, socket) {
       break;
     }
 
-    const playerIndex = game.players.findIndex((p) => p.socketId === socket.id);
+     const playerIndex = game.players.findIndex((p) => p.socketId === socket.id);
     if (playerIndex !== -1) {
       const player = game.players[playerIndex];
       console.log(`Player ${player.name} temporarily disconnected.`);
@@ -221,6 +229,18 @@ function handleDisconnect(io, socket) {
       if (game.hostSocketId && game.hostConnected) {
         io.to(game.hostSocketId).emit("players", game.players);
       }
+
+      // Set a timer to remove the player if they don't reconnect
+      player.disconnectTimeout = setTimeout(() => {
+        if (games[roomCode] && !player.connected) {
+          console.log(`Player ${player.name} did not reconnect for room ${roomCode}. Removing from game.`);
+          game.players.splice(playerIndex, 1);
+          if (game.hostSocketId && game.hostConnected) {
+            io.to(game.hostSocketId).emit("players", game.players);
+          }
+        }
+      }, 30000); // 30-second grace period
+
       break;
     }
   }

@@ -35,6 +35,7 @@ const FaTrophy = () => (
 function Host() {
   const [copied, setCopied] = useState(false);
   const [openPlayerId, setOpenPlayerId] = useState(null); // New state to track open dropdown
+   const [searchTerm, setSearchTerm] = useState("");
   const {
     host,
     setHost,
@@ -105,9 +106,12 @@ function Host() {
     };
   }, [handleRollNumber]);
 
-  const handlePlayerClick = (playerId) => {
+   const handlePlayerClick = (playerId) => {
     setOpenPlayerId(openPlayerId === playerId ? null : playerId);
   };
+  const filteredPlayers = host.players.filter((player) =>
+    player.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   const getNumberColor = (number) => {
     const column = columns.find(
       (c) => number >= c.range[0] && number <= c.range[1]
@@ -134,7 +138,7 @@ function Host() {
     }
   };
 
-  const sortedPlayers = [...host.players].sort(
+ const sortedPlayers = [...filteredPlayers].sort(
     (a, b) => a.result.length - b.result.length
   );
 
@@ -148,15 +152,15 @@ function Host() {
   return (
     <div className="flex flex-col items-center justify-between bg-gray-900">
       <div className="flex flex-col items-center w-full gap-2 px-4 md:flex-row md:justify-start md:gap-5 md:px-10">
-        <h1 className="py-5 ml-5 font-medium text-gray-300 text-md font-inter w-fit">
+        <h1 className="py-5 ml-5 font-medium text-gray-300 text-sm font-inter w-fit">
           Host:{" "}
-          <span className="text-gray-50">{host.hostName?.toUpperCase()}</span>
+          <span className="text-gray-50 font-bold">{host.hostName?.toUpperCase()}</span>
         </h1>
-        <h1 className="flex flex-row gap-2 py-5 font-medium text-gray-300 text-md font-inter w-fit">
+        <h1 className="flex flex-row gap-2 py-5 font-medium text-gray-300 text-sm font-inter w-fit">
           Room Code:{" "}
           <button
             onClick={handleCopy}
-            className="relative flex flex-row items-center gap-1 text-gray-50 hover:text-gray-300 "
+            className="relative flex flex-row items-center gap-1 font-bold text-gray-50 hover:text-gray-300 "
           >
             {location.pathname.slice(1)}
             <FaCopy />
@@ -229,14 +233,25 @@ function Host() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg">
-          <div className="flex flex-row items-center justify-start">
-            <h1 className="p-2 font-medium text-gray-300 font-inter text-md w-fit">
-              Players:{" "}
-            </h1>{" "}
-            <h1 className="flex items-center justify-center w-6 h-6 font-medium text-gray-300 bg-gray-500 rounded text-md">
-              {host.players.length}
-            </h1>
+       <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg">
+          <div className="flex flex-row items-center justify-between p-2">
+            <div className="flex flex-row items-center">
+              <h1 className="font-medium text-gray-300 font-inter text-md w-fit">
+                Players:{" "}
+              </h1>{" "}
+              <h1 className="flex items-center justify-center w-6 h-6 ml-2 font-medium text-gray-300 bg-gray-500 rounded text-md">
+                {host.players.length}
+              </h1>
+            </div>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search Player..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-40 h-8 px-2 text-sm text-gray-300 bg-gray-700 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
           </div>
           {host.winners && host.winners.length > 0 && (
             <div className="w-full px-4 py-2 mt-2 text-center bg-gray-700 rounded-lg">
@@ -249,7 +264,7 @@ function Host() {
               </p>
             </div>
           )}
-          <ul className="flex flex-col gap-1 px-4 mt-2 overflow-y-auto max-h-96 hide-scrollbar">
+            <ul className="flex flex-col gap-1 px-4 mt-2 overflow-y-auto max-h-96 hide-scrollbar">
             {sortedPlayers.map((player) => (
               <li
                 key={player.id}
