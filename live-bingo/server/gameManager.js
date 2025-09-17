@@ -3,7 +3,42 @@ const { generateCard } = require("./utils");
 
 let games = {}; // All active games stored in memory
 
-// --- New Function for Shuffling ---
+function calculateBestCardResult(cards, winningPattern, numberCalled = []) {
+  if (!cards || cards.length === 0) {
+    return [];
+  }
+
+  const winningIndices = winningPattern.index;
+  const numberCalledSet = new Set(numberCalled);
+
+  let bestCardResult = null;
+  let minRemaining = Infinity;
+
+  for (const card of cards) {
+    const cardNumbers = [
+      ...card.B,
+      ...card.I,
+      ...card.N,
+      ...card.G,
+      ...card.O,
+    ];
+
+    const requiredNumbersOnCard = winningIndices
+      .map((index) => cardNumbers[index])
+      .filter((num) => num !== null);
+
+    const remainingOnCard = requiredNumbersOnCard.filter(
+      (num) => !numberCalledSet.has(num)
+    );
+
+    if (remainingOnCard.length < minRemaining) {
+      minRemaining = remainingOnCard.length;
+      bestCardResult = remainingOnCard;
+    }
+  }
+  return bestCardResult || [];
+}
+
 function rollAndShuffleNumber(io, socket, roomCode) {
   const game = games[roomCode];
   if (
@@ -239,41 +274,7 @@ function handleDisconnect(io, socket) {
     }
   }
 }
-function calculateBestCardResult(cards, winningPattern, numberCalled = []) {
-  if (!cards || cards.length === 0) {
-    return [];
-  }
 
-  const winningIndices = winningPattern.index;
-  const numberCalledSet = new Set(numberCalled);
-
-  let bestCardResult = null;
-  let minRemaining = Infinity;
-
-  for (const card of cards) {
-    const cardNumbers = [
-      ...card.B,
-      ...card.I,
-      ...card.N,
-      ...card.G,
-      ...card.O,
-    ];
-
-    const requiredNumbersOnCard = winningIndices
-      .map((index) => cardNumbers[index])
-      .filter((num) => num !== null);
-
-    const remainingOnCard = requiredNumbersOnCard.filter(
-      (num) => !numberCalledSet.has(num)
-    );
-
-    if (remainingOnCard.length < minRemaining) {
-      minRemaining = remainingOnCard.length;
-      bestCardResult = remainingOnCard;
-    }
-  }
-  return bestCardResult || [];
-}
 function updateWinningPattern(io, socket, roomCode, newPattern) {
   const game = games[roomCode];
   if (game && game.hostSocketId === socket.id) {
@@ -289,6 +290,7 @@ function updateWinningPattern(io, socket, roomCode, newPattern) {
     io.to(game.hostSocketId).emit("players", game.players);
   }
 }
+
 function newGame(io, socket, roomCode) {
   const game = games[roomCode];
   if (!game || game.hostSocketId !== socket.id) {
@@ -301,11 +303,12 @@ function newGame(io, socket, roomCode) {
   game.numberCalled = [null]; // Reset with null for the "FREE" space
   game.winners = [];
 
-    game.players.forEach((player) => {
-        // This line is updated
-        player.result = calculateResult(player.cards, game.cardWinningPattern);
-    });
-
+  game.players.forEach((player) => {
+    player.result = calculateBestCardResult(
+      player.cards,
+      game.cardWinningPattern
+    );
+  });
 
   io.to(roomCode).emit("game-reset", game);
 
@@ -315,6 +318,7 @@ function newGame(io, socket, roomCode) {
     }
   }, 5000);
 }
+
 function refreshCard(io, socket, roomCode, playerId, cardIndex) {
   const game = games[roomCode];
   if (!game) return;
@@ -330,11 +334,10 @@ function refreshCard(io, socket, roomCode, playerId, cardIndex) {
   const newCard = generateCard();
   player.cards[cardIndex] = newCard;
 
-  const allNumbersOnCard = Object.values(newCard)
-    .flat()
-    .filter((n) => n !== null);
-
-  player.result = allNumbersOnCard
+  player.result = calculateBestCardResult(
+    player.cards,
+    game.cardWinningPattern
+  );
 
   socket.emit("card-refreshed", player.cards);
   if (game.hostSocketId) {
@@ -420,7 +423,7 @@ module.exports = {
   newGame,
   leaveGame,
   endGame,
-  rollAndShuffleNumber, 
+  rollAndShuffleNumber,
   refreshCard,
   updateWinningPattern,
 };
