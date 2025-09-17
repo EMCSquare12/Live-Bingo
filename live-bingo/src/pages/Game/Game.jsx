@@ -49,7 +49,7 @@ function Game() {
   }
 
   return (
-    <div className="relative flex flex-col w-screen min-h-screen">
+    <div className="relative flex flex-col w-screen h-screen">
       {showConfetti && <Confetti />}
       <Header />
       <Outlet />
