@@ -99,20 +99,14 @@ function joinRoom(io, socket, playerName, roomCode) {
     return;
   }
 
-  const cards = Array.from({ length: game.cardNumber }, generateCard);
+   const cards = Array.from({ length: game.cardNumber }, generateCard);
   const playerId = uuidv4();
-  const allNumbersOnCard =
-    cards.length > 0
-      ? Object.values(cards[0])
-        .flat()
-        .filter((n) => n !== null)
-      : [];
   const player = {
     id: playerId,
     socketId: socket.id,
     name: playerName,
     cards,
-    result: allNumbersOnCard,
+    result: calculateResult(cards, game.cardWinningPattern), // <-- This line is updated
     connected: true,
   };
 
@@ -245,6 +239,25 @@ function handleDisconnect(io, socket) {
     }
   }
 }
+function calculateResult(cards, winningPattern) {
+  const winningIndices = new Set(winningPattern.index);
+  let requiredNumbers = new Set();
+  for (const card of cards) {
+    const cardNumbers = [
+      ...card.B,
+      ...card.I,
+      ...card.N,
+      ...card.G,
+      ...card.O,
+    ];
+    for (const index of winningIndices) {
+      if (cardNumbers[index] !== null) {
+        requiredNumbers.add(cardNumbers[index]);
+      }
+    }
+  }
+  return Array.from(requiredNumbers);
+}
 
 function newGame(io, socket, roomCode) {
   const game = games[roomCode];
@@ -258,14 +271,11 @@ function newGame(io, socket, roomCode) {
   game.numberCalled = [null]; // Reset with null for the "FREE" space
   game.winners = [];
 
-  game.players.forEach((player) => {
-    if (player.cards.length > 0) {
-      const allNumbersOnCard = Object.values(player.cards[0]).flat();
-      player.result = allNumbersOnCard.filter((n) => n !== null);
-    } else {
-      player.result = [];
-    }
-  });
+    game.players.forEach((player) => {
+        // This line is updated
+        player.result = calculateResult(player.cards, game.cardWinningPattern);
+    });
+
 
   io.to(roomCode).emit("game-reset", game);
 
@@ -359,27 +369,14 @@ function rollNumber(io, socket, numberCalled, roomCode) {
   }
 
   game.players.forEach((player) => {
-    if (player.cards.length >= 2) {
-      const bestCard = player.cards.reduce((best, current) => {
-        const bestMatches = Object.values(best)
-          .flat()
-          .filter((num) => game.numberCalled.includes(num)).length;
-        const currentMatches = Object.values(current)
-          .flat()
-          .filter((num) => game.numberCalled.includes(num)).length;
-        return currentMatches >= bestMatches ? current : best;
-      });
-      const allNumbersOnBestCard = Object.values(bestCard).flat();
-      player.result = allNumbersOnBestCard.filter(
-        (n) => !game.numberCalled.includes(n)
-      );
-    } else if (player.cards.length === 1) {
-      const allNumbersOnCard = Object.values(player.cards[0]).flat();
-      player.result = allNumbersOnCard.filter(
-        (n) => !game.numberCalled.includes(n)
-      );
+        player.result = calculateResult(player.cards, game.cardWinningPattern).filter(
+          (n) => !game.numberCalled.includes(n)
+        );
+    });
+
+    if (game.hostSocketId && game.hostConnected) {
+        io.to(game.hostSocketId).emit("players", game.players);
     }
-  });
 
 
   if (game.hostSocketId && game.hostConnected) {
