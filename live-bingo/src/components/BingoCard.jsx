@@ -1,23 +1,11 @@
 import { GiRoundStar } from "react-icons/gi";
 import { FiRefreshCw } from "react-icons/fi";
-import { useContext, useState } from "react";
+import { useContext } from "react";
 import GameContext from "../context/GameContext";
-import { socket } from "../utils/socket";
 
-function BingoCard({ letterNumber, handleRefresh }) {
-  const { host, roomCode, player } = useContext(GameContext);
+function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberClick }) {
+  const { host } = useContext(GameContext);
   const isGameStarted = host.numberCalled && host.numberCalled.length > 1;
-  const [markedNumbers, setMarkedNumbers] = useState([]);
-
-  const handleNumberClick = (num) => {
-    if (host.numberCalled?.includes(num)) {
-      const newMarkedNumbers = markedNumbers.includes(num)
-        ? markedNumbers.filter((n) => n !== num)
-        : [...markedNumbers, num];
-      setMarkedNumbers(newMarkedNumbers);
-      socket.emit("mark-number", roomCode, player.id, newMarkedNumbers);
-    }
-  };
 
   const columns = [
     {

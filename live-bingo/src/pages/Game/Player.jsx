@@ -1,4 +1,4 @@
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import BingoCard from "../../components/BingoCard";
 import GameContext from "../../context/GameContext";
 import { socket } from "../../utils/socket";
@@ -8,10 +8,26 @@ function Player() {
     useContext(GameContext);
   const [copied, setCopied] = useState(false);
   const cards = player.cards ?? [];
+  const [markedNumbers, setMarkedNumbers] = useState(player.markedNumbers || []);
+
+  useEffect(() => {
+    setMarkedNumbers(player.markedNumbers || []);
+  }, [player.markedNumbers]);
 
   const handleRefresh = (cardIndex) => {
     socket.emit("request-new-card", roomCode, player.id, cardIndex);
   };
+
+  const handleNumberClick = (num) => {
+    if (host.numberCalled?.includes(num)) {
+      const newMarkedNumbers = markedNumbers.includes(num)
+        ? markedNumbers.filter((n) => n !== num)
+        : [...markedNumbers, num];
+      setMarkedNumbers(newMarkedNumbers);
+      socket.emit("mark-number", roomCode, player.id, newMarkedNumbers);
+    }
+  };
+
   const columns = [
     {
       label: "B",
@@ -168,6 +184,8 @@ function Player() {
               key={index}
               letterNumber={value}
               handleRefresh={() => handleRefresh(index)}
+              markedNumbers={markedNumbers}
+              handleNumberClick={handleNumberClick}
             />
           ))}
         </div>

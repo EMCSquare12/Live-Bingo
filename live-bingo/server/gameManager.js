@@ -368,7 +368,46 @@ function markNumber(io, roomCode, playerId, markedNumbers) {
   if (game.hostSocketId && game.hostConnected) {
     io.to(game.hostSocketId).emit("players", game.players);
   }
+
+  const winningPatternIndices = game.cardWinningPattern.index;
+  let hasWinner = false;
+
+  for (const card of player.cards) {
+    const cardNumbers = [
+      ...card.B,
+      ...card.I,
+      ...card.N,
+      ...card.G,
+      ...card.O,
+    ];
+    const requiredNumbers = winningPatternIndices
+      .map((index) => cardNumbers[index])
+      .filter((num) => num !== null); // Filter out null values
+
+    const isWinner = requiredNumbers.every((num) =>
+      player.markedNumbers.includes(num)
+    );
+
+    if (isWinner) {
+      if (!game.winners.some((w) => w.id === player.id)) {
+        game.winners.push({ id: player.id, name: player.name });
+        hasWinner = true;
+      }
+    }
+  }
+
+  if (hasWinner) {
+    setTimeout(() => {
+      console.log(
+        `🎉 Winner(s) found: ${game.winners
+          .map((w) => w.name)
+          .join(", ")} in room ${roomCode}`
+      );
+      io.to(roomCode).emit("players-won", game.winners);
+    }, 100);
+  }
 }
+
 
 function rollNumber(io, socket, numberCalled, roomCode) {
   const game = games[roomCode];
@@ -377,7 +416,7 @@ function rollNumber(io, socket, numberCalled, roomCode) {
     !numberCalled ||
     (game.winners && game.winners.length > 0) ||
     game.isNewRoundStarting ||
-    game.players.length < 2 // Changed from < 1 to < 2
+    game.players.length < 2
   ) {
     console.log("Roll blocked. Conditions not met.");
     return;
@@ -387,44 +426,7 @@ function rollNumber(io, socket, numberCalled, roomCode) {
     game.numberCalled.push(numberCalled);
   }
 
-  // Emit the new number to all clients first.
   io.to(roomCode).emit("number-called", game.numberCalled);
-
-  const winningPatternIndices = game.cardWinningPattern.index;
-  let hasWinner = false;
-
-  for (const player of game.players) {
-    for (const card of player.cards) {
-      const cardNumbers = [
-        ...card.B,
-        ...card.I,
-        ...card.N,
-        ...card.G,
-        ...card.O,
-      ];
-      const requiredNumbers = winningPatternIndices.map(
-        (index) => cardNumbers[index]
-      );
-      const isWinner = requiredNumbers.every((num) =>
-        player.markedNumbers.includes(num)
-      );
-
-      if (isWinner) {
-        if (!game.winners.some(w => w.id === player.id)) {
-          game.winners.push({ id: player.id, name: player.name });
-          hasWinner = true;
-        }
-      }
-    }
-  }
-
-  if (hasWinner) {
-    // Add a small delay to allow the clients to render the last number called
-    setTimeout(() => {
-      console.log(`🎉 Winner(s) found: ${game.winners.map(w => w.name).join(', ')} in room ${roomCode}`);
-      io.to(roomCode).emit("players-won", game.winners);
-    }, 100); // 100ms delay
-  }
 }
 
 module.exports = {
