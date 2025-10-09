@@ -1,11 +1,23 @@
 import { GiRoundStar } from "react-icons/gi";
 import { FiRefreshCw } from "react-icons/fi";
-import { useContext } from "react";
+import { useContext, useState } from "react";
 import GameContext from "../context/GameContext";
+import { socket } from "../utils/socket";
 
 function BingoCard({ letterNumber, handleRefresh }) {
-  const { host } = useContext(GameContext);
+  const { host, roomCode, player } = useContext(GameContext);
   const isGameStarted = host.numberCalled && host.numberCalled.length > 1;
+  const [markedNumbers, setMarkedNumbers] = useState([]);
+
+  const handleNumberClick = (num) => {
+    if (host.numberCalled?.includes(num)) {
+      const newMarkedNumbers = markedNumbers.includes(num)
+        ? markedNumbers.filter((n) => n !== num)
+        : [...markedNumbers, num];
+      setMarkedNumbers(newMarkedNumbers);
+      socket.emit("mark-number", roomCode, player.id, newMarkedNumbers);
+    }
+  };
 
   const columns = [
     {
@@ -76,18 +88,25 @@ function BingoCard({ letterNumber, handleRefresh }) {
             key={colIndex}
             className="grid grid-cols-1 grid-rows-5 gap-2 rounded-md"
           >
-            {letterNumber[char].map((num, rowIndex) => (
-              <div
-                key={rowIndex}
-                className={`flex items-center justify-center w-12 h-12 text-xl font-bold  rounded-md font-inter ${
-                  host.numberCalled?.includes(num)
-                    ? "text-gray-50 bg-gray-500"
-                    : `bg-gray-800 ${getNumberColor(num)}`
-                }`}
-              >
-                {rowIndex === 2 && colIndex === 2 ? <GiRoundStar /> : num}
-              </div>
-            ))}
+            {letterNumber[char].map((num, rowIndex) => {
+              const isCalled = host.numberCalled?.includes(num);
+              const isMarked = markedNumbers.includes(num);
+              return (
+                <div
+                  key={rowIndex}
+                  onClick={() => handleNumberClick(num)}
+                  className={`flex items-center justify-center w-12 h-12 text-xl font-bold  rounded-md font-inter ${
+                    isCalled ? "cursor-pointer" : ""
+                  } ${
+                    isCalled && isMarked
+                      ? "text-gray-50 bg-gray-500"
+                      : `bg-gray-800 ${getNumberColor(num)}`
+                  }`}
+                >
+                  {rowIndex === 2 && colIndex === 2 ? <GiRoundStar /> : num}
+                </div>
+              );
+            })}
           </div>
         ))}
       </div>
