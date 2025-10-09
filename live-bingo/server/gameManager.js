@@ -3,13 +3,13 @@ const { generateCard } = require("./utils");
 
 let games = {}; // All active games stored in memory
 
-function calculateBestCardResult(cards, winningPattern, numberCalled = []) {
+function calculateBestCardResult(cards, winningPattern, markedNumbers = []) {
   if (!cards || cards.length === 0) {
     return [];
   }
 
   const winningIndices = winningPattern.index;
-  const numberCalledSet = new Set(numberCalled);
+  const markedNumbersSet = new Set(markedNumbers);
 
   let bestCardResult = null;
   let minRemaining = Infinity;
@@ -28,7 +28,7 @@ function calculateBestCardResult(cards, winningPattern, numberCalled = []) {
       .filter((num) => num !== null);
 
     const remainingOnCard = requiredNumbersOnCard.filter(
-      (num) => !numberCalledSet.has(num)
+      (num) => !markedNumbersSet.has(num)
     );
 
     if (remainingOnCard.length < minRemaining) {
@@ -141,7 +141,8 @@ function joinRoom(io, socket, playerName, roomCode) {
     socketId: socket.id,
     name: playerName,
     cards,
-    result: calculateBestCardResult(cards, game.cardWinningPattern),
+    result: calculateBestCardResult(cards, game.cardWinningPattern, []),
+    markedNumbers: [],
     connected: true,
   };
 
@@ -283,7 +284,7 @@ function updateWinningPattern(io, socket, roomCode, newPattern) {
       player.result = calculateBestCardResult(
         player.cards,
         newPattern,
-        game.numberCalled
+        player.markedNumbers
       );
     });
     io.to(roomCode).emit("winning-pattern-updated", newPattern);
@@ -306,8 +307,10 @@ function newGame(io, socket, roomCode) {
   game.players.forEach((player) => {
     player.result = calculateBestCardResult(
       player.cards,
-      game.cardWinningPattern
+      game.cardWinningPattern,
+      []
     );
+    player.markedNumbers = [];
   });
 
   io.to(roomCode).emit("game-reset", game);
@@ -336,11 +339,33 @@ function refreshCard(io, socket, roomCode, playerId, cardIndex) {
 
   player.result = calculateBestCardResult(
     player.cards,
-    game.cardWinningPattern
+    game.cardWinningPattern,
+    []
   );
+  player.markedNumbers = [];
 
   socket.emit("card-refreshed", player.cards);
   if (game.hostSocketId) {
+    io.to(game.hostSocketId).emit("players", game.players);
+  }
+}
+
+function markNumber(io, roomCode, playerId, markedNumbers) {
+  const game = games[roomCode];
+  if (!game) return;
+
+  const player = game.players.find((p) => p.id === playerId);
+  if (!player) return;
+
+  player.markedNumbers = markedNumbers;
+
+  player.result = calculateBestCardResult(
+    player.cards,
+    game.cardWinningPattern,
+    player.markedNumbers
+  );
+
+  if (game.hostSocketId && game.hostConnected) {
     io.to(game.hostSocketId).emit("players", game.players);
   }
 }
@@ -381,7 +406,7 @@ function rollNumber(io, socket, numberCalled, roomCode) {
         (index) => cardNumbers[index]
       );
       const isWinner = requiredNumbers.every((num) =>
-        game.numberCalled.includes(num)
+        player.markedNumbers.includes(num)
       );
 
       if (isWinner) {
@@ -400,18 +425,6 @@ function rollNumber(io, socket, numberCalled, roomCode) {
       io.to(roomCode).emit("players-won", game.winners);
     }, 100); // 100ms delay
   }
-
-  game.players.forEach((player) => {
-    player.result = calculateBestCardResult(
-      player.cards,
-      game.cardWinningPattern,
-      game.numberCalled
-    );
-  });
-
-  if (game.hostSocketId && game.hostConnected) {
-    io.to(game.hostSocketId).emit("players", game.players);
-  }
 }
 
 module.exports = {
@@ -426,4 +439,5 @@ module.exports = {
   rollAndShuffleNumber,
   refreshCard,
   updateWinningPattern,
+  markNumber,
 };

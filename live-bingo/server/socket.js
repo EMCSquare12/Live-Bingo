@@ -1,4 +1,4 @@
-const { createRoom, joinRoom, handleDisconnect, reconnectPlayer, newGame, leaveGame, endGame, rollAndShuffleNumber, refreshCard } = require("./gameManager");
+const { createRoom, joinRoom, handleDisconnect, reconnectPlayer, newGame, leaveGame, endGame, rollAndShuffleNumber, refreshCard, markNumber } = require("./gameManager");
 
 function registerSocketHandlers(io) {
   io.on("connection", (socket) => {
@@ -6,6 +6,10 @@ function registerSocketHandlers(io) {
 
     socket.on("request-new-card", (roomCode, playerId, cardIndex) => {
       refreshCard(io, socket, roomCode, playerId, cardIndex);
+    });
+
+    socket.on("mark-number", (roomCode, playerId, markedNumbers) => {
+      markNumber(io, roomCode, playerId, markedNumbers);
     });
 
     socket.on("create-room", (hostName, cardNumber, cardWinningPattern) => {
