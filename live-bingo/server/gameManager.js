@@ -370,8 +370,13 @@ function markNumber(io, roomCode, playerId, markedNumbers) {
   }
 
   const winningPatternIndices = game.cardWinningPattern.index;
-  let hasWinner = false;
+  const isAlreadyWinner = game.winners.some(winner => winner.id === player.id);
 
+  if (isAlreadyWinner) {
+    return;
+  }
+
+  let hasWon = false;
   for (const card of player.cards) {
     const cardNumbers = [
       ...card.B,
@@ -382,29 +387,28 @@ function markNumber(io, roomCode, playerId, markedNumbers) {
     ];
     const requiredNumbers = winningPatternIndices
       .map((index) => cardNumbers[index])
-      .filter((num) => num !== null); // Filter out null values
+      .filter((num) => num !== null);
+
+    if (requiredNumbers.length === 0) continue;
 
     const isWinner = requiredNumbers.every((num) =>
       player.markedNumbers.includes(num)
     );
 
     if (isWinner) {
-      if (!game.winners.some((w) => w.id === player.id)) {
-        game.winners.push({ id: player.id, name: player.name });
-        hasWinner = true;
-      }
+      hasWon = true;
+      break;
     }
   }
 
-  if (hasWinner) {
-    setTimeout(() => {
-      console.log(
-        `🎉 Winner(s) found: ${game.winners
-          .map((w) => w.name)
-          .join(", ")} in room ${roomCode}`
-      );
-      io.to(roomCode).emit("players-won", game.winners);
-    }, 100);
+  if (hasWon) {
+    game.winners.push({ id: player.id, name: player.name });
+    console.log(
+      `🎉 Winner(s) found: ${game.winners
+        .map((w) => w.name)
+        .join(", ")} in room ${roomCode}`
+    );
+    io.to(roomCode).emit("players-won", game.winners);
   }
 }
 
@@ -416,7 +420,7 @@ function rollNumber(io, socket, numberCalled, roomCode) {
     !numberCalled ||
     (game.winners && game.winners.length > 0) ||
     game.isNewRoundStarting ||
-    game.players.length < 2
+    game.players.length < 1
   ) {
     console.log("Roll blocked. Conditions not met.");
     return;

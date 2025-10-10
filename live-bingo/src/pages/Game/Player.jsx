@@ -4,8 +4,15 @@ import GameContext from "../../context/GameContext";
 import { socket } from "../../utils/socket";
 
 function Player() {
-  const { player, host, isShuffling, displayNumber, roomCode } =
-    useContext(GameContext);
+  const {
+    player,
+    host,
+    isShuffling,
+    displayNumber,
+    roomCode,
+    setWinMessage,
+    setShowConfetti,
+  } = useContext(GameContext);
   const [copied, setCopied] = useState(false);
   const cards = player.cards ?? [];
   const [markedNumbers, setMarkedNumbers] = useState(player.markedNumbers || []);
@@ -25,6 +32,33 @@ function Player() {
         : [...markedNumbers, num];
       setMarkedNumbers(newMarkedNumbers);
       socket.emit("mark-number", roomCode, player.id, newMarkedNumbers);
+
+      // Optimistic win check
+      const winningPatternIndices = host.cardWinningPattern.index;
+      for (const card of player.cards) {
+        const cardNumbers = [
+          ...card.B,
+          ...card.I,
+          ...card.N,
+          ...card.G,
+          ...card.O,
+        ];
+        const requiredNumbers = winningPatternIndices
+          .map((index) => cardNumbers[index])
+          .filter((num) => num !== null);
+
+        if (requiredNumbers.length > 0) {
+          const isWinner = requiredNumbers.every((num) =>
+            newMarkedNumbers.includes(num)
+          );
+
+          if (isWinner) {
+            setShowConfetti(true);
+            setWinMessage("BINGO! You are the winner!");
+            break;
+          }
+        }
+      }
     }
   };
 

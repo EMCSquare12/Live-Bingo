@@ -94,9 +94,16 @@ function Host() {
     socket.emit("request-new-number", roomCode);
   };
 
+  const isRollDisabled =
+    isNewGameModalVisible ||
+    host.players.length < 2 || // Changed from < 1 to < 2
+    bingoNumbers.array.length === 0 ||
+    (host.winners && host.winners.length > 0) ||
+    isShuffling;
+
   useEffect(() => {
     const handleKeyPress = (event) => {
-      if (event.key === "Enter") {
+      if (event.key === "Enter" && !isRollDisabled) {
         handleRollNumber();
       }
     };
@@ -104,7 +111,7 @@ function Host() {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [handleRollNumber]);
+  }, [handleRollNumber, isRollDisabled]);
 
    const handlePlayerClick = (playerId) => {
     setOpenPlayerId(openPlayerId === playerId ? null : playerId);
@@ -141,13 +148,6 @@ function Host() {
  const sortedPlayers = [...filteredPlayers].sort(
     (a, b) => a.result.length - b.result.length
   );
-
-  const isRollDisabled =
-    isNewGameModalVisible ||
-    host.players.length < 2 || // Changed from < 1 to < 2
-    bingoNumbers.array.length === 0 ||
-    (host.winners && host.winners.length > 0) ||
-    isShuffling;
 
   return (
     <div className="flex flex-col items-center justify-between bg-gray-900">
