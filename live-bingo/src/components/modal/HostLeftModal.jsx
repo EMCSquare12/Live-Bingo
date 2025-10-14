@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import GameContext from "../../context/GameContext";
 
 const HostLeftModal = () => {
-  const { resetGame, setIsHostLeftModalVisible } = useContext(GameContext);
+  const { resetGame, setIsHostLeftModalVisible, theme } = useContext(GameContext);
   const navigate = useNavigate();
   const [countdown, setCountdown] = useState(5);
 
@@ -24,11 +24,11 @@ const HostLeftModal = () => {
     }, 1000);
 
     return () => clearInterval(timerId);
-  }, [countdown]);
+  }, [countdown, handleCloseAndRedirect]);
 
   return (
     <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-screen h-screen bg-black bg-opacity-70">
-      <div className="flex flex-col items-center gap-6 p-10 text-center bg-gray-800 rounded-lg shadow-xl text-gray-50">
+      <div className={`flex flex-col items-center gap-6 p-10 text-center rounded-lg shadow-xl text-gray-50 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
         <h1 className="text-4xl font-bold text-red-500">Host Left</h1>
         <p className="text-xl">The host has ended the game.</p>
         <p className="text-lg">Redirecting in {countdown}...</p>

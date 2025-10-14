@@ -19,12 +19,19 @@ const GameProvider = ({ children }) => {
     onCancel: () => {},
   });
  const [theme, setTheme] = useState({
+    name: 'default',
     color: '#374151',
     backgroundColor: '#111827',
     backgroundImage: '',
     cardGridColor: '#4b5563',
-    cardLetterColor: '#ffffff',
-    cardNumberColor: '#ffffff',
+    columnColors: {
+      B: '#3b82f6',
+      I: '#ef4444',
+      N: '#9ca3af',
+      G: '#22c55e',
+      O: '#eab308',
+    },
+    isTransparent: false,
   });
   const [isShuffling, setIsShuffling] = useState(false);
   const [displayNumber, setDisplayNumber] = useState(null);
@@ -115,6 +122,9 @@ const GameProvider = ({ children }) => {
         players: game.players,
         winners: game.winners,
       });
+      if (game.theme) {
+        setTheme(game.theme);
+      }
       const allNumbers = [...Array(75)].map((_, i) => i + 1);
       const remainingNumbers = allNumbers.filter(
         (num) => !game.numberCalled.includes(num)

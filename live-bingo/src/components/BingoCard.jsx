@@ -1,19 +1,37 @@
 // src/components/BingoCard.jsx
 import { GiRoundStar } from "react-icons/gi";
 import { FiRefreshCw } from "react-icons/fi";
-import { useContext } from "react";
+import { useContext, useRef, useEffect } from "react";
 import GameContext from "../context/GameContext";
 
-function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberClick }) {
+function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberClick, onLetterClick, activeColorPicker, onColumnColorChange, isThemeEditor = false }) {
   const { host, theme } = useContext(GameContext);
   const isGameStarted = host.numberCalled && host.numberCalled.length > 1;
-
+  const colorPickerRef = useRef(null);
   const columns = ["B", "I", "N", "G", "O"];
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (onLetterClick && colorPickerRef.current && !colorPickerRef.current.contains(event.target)) {
+        onLetterClick(null);
+      }
+    };
+    if (isThemeEditor) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      if(isThemeEditor) {
+        document.removeEventListener("mousedown", handleClickOutside);
+      }
+    };
+  }, [onLetterClick, isThemeEditor]);
 
   return (
     <div
-      className="relative flex flex-col gap-4 p-4 overflow-hidden rounded-lg shadow-lg w-fit h-fit"
-      style={{ backgroundColor: theme.color }}
+      className={`relative flex flex-col gap-4 p-4 overflow-hidden rounded-lg shadow-lg w-fit h-fit ${theme.isTransparent ? 'glass-morphism' : ''}`}
+      style={{ 
+        backgroundColor: theme.color
+      }}
     >
       <div className="absolute top-0 right-0 flex flex-row overflow-hidden bg-white rounded-bl-lg h-fit w-fit bg-opacity-20">
         <button
@@ -35,10 +53,21 @@ function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberCli
         {columns.map((label) => (
           <div
             key={label}
-            className="flex items-center justify-center w-12 text-4xl font-bold"
-            style={{ color: theme.cardLetterColor }}
+            className={`relative flex items-center justify-center w-12 text-4xl font-bold ${isThemeEditor ? 'cursor-pointer' : ''}`}
+            style={{ color: theme.columnColors[label] }}
+            onClick={() => isThemeEditor && onLetterClick(label)}
           >
             {label}
+            {isThemeEditor && activeColorPicker === label && (
+              <div ref={colorPickerRef} className="absolute top-full mt-2 z-10" onClick={(e) => e.stopPropagation()}>
+                <input
+                  type="color"
+                  value={theme.columnColors[label]}
+                  onChange={(e) => onColumnColorChange(label, e.target.value)}
+                  className="w-16 h-10 p-1 bg-transparent border-0 rounded-md cursor-pointer"
+                />
+              </div>
+            )}
           </div>
         ))}
       </div>
@@ -60,10 +89,10 @@ function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberCli
                   }`}
                   style={{
                     backgroundColor: isCalled && isMarked ? '#6b7280' : theme.cardGridColor,
-                    color: isCalled && isMarked ? '#ffffff' : theme.cardNumberColor,
+                    color: theme.columnColors[char],
                   }}
                 >
-                  {rowIndex === 2 && colIndex === 2 ? <GiRoundStar /> : num}
+                  {rowIndex === 2 && colIndex === 2 ? <GiRoundStar style={{color: theme.columnColors.N}} /> : num}
                 </div>
               );
             })}

@@ -2,7 +2,7 @@ import { useContext, useState, useEffect } from "react";
 import GameContext from "../../context/GameContext";
 
 const NewGameModal = () => {
-  const { setIsNewGameModalVisible } = useContext(GameContext);
+  const { setIsNewGameModalVisible, theme } = useContext(GameContext);
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
@@ -27,7 +27,7 @@ const NewGameModal = () => {
 
   return (
     <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-screen h-screen bg-black bg-opacity-70">
-      <div className="flex flex-col items-center gap-6 p-10 text-center bg-gray-800 rounded-lg shadow-xl text-gray-50">
+      <div className={`flex flex-col items-center gap-6 p-10 text-center rounded-lg shadow-xl text-gray-50 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
         <h1 className="text-4xl font-bold text-blue-400">New Game Starting!</h1>
         <p className="text-xl">The host has started a new round.</p>
         <div className="text-6xl font-bold text-white">{countdown}</div>

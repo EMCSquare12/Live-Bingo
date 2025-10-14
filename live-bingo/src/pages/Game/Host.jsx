@@ -50,36 +50,11 @@ function Host() {
   const location = useLocation();
 
   const columns = [
-    {
-      label: "B",
-      range: [1, 15],
-      textColor: "text-blue-500",
-      bgColor: "bg-blue-500",
-    },
-    {
-      label: "I",
-      range: [16, 30],
-      textColor: "text-red-500",
-      bgColor: "bg-red-500",
-    },
-    {
-      label: "N",
-      range: [31, 45],
-      textColor: "text-gray-400",
-      bgColor: "bg-gray-400",
-    },
-    {
-      label: "G",
-      range: [46, 60],
-      textColor: "text-green-500",
-      bgColor: "bg-green-500",
-    },
-    {
-      label: "O",
-      range: [61, 75],
-      textColor: "text-yellow-500",
-      bgColor: "bg-yellow-500",
-    },
+    { label: "B", range: [1, 15] },
+    { label: "I", range: [16, 30] },
+    { label: "N", range: [31, 45] },
+    { label: "G", range: [46, 60] },
+    { label: "O", range: [61, 75] },
   ];
 
   useEffect(() => {
@@ -98,7 +73,7 @@ function Host() {
 
   const isRollDisabled =
     isNewGameModalVisible ||
-    host.players.length < 2 || // Changed from < 1 to < 2
+    host.players.length < 1 ||
     bingoNumbers.array.length === 0 ||
     (host.winners && host.winners.length > 0) ||
     isShuffling ||
@@ -122,11 +97,13 @@ function Host() {
   const filteredPlayers = host.players.filter((player) =>
     player.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
-  const getNumberColor = (number) => {
-    const column = columns.find(
-      (c) => number >= c.range[0] && number <= c.range[1]
-    );
-    return column ? column.bgColor : "bg-gray-500";
+  
+  const getNumberStyle = (number) => {
+    const column = columns.find(c => number >= c.range[0] && number <= c.range[1]);
+    if (column) {
+      return { backgroundColor: theme.columnColors[column.label] };
+    }
+    return { backgroundColor: '#6b7280' }; // gray-500
   };
 
   const finalRolledNumber = host.numberCalled.at(-1);
@@ -153,17 +130,7 @@ function Host() {
   );
 
   return (
-<div
-      className="flex flex-col items-center justify-between"
-      style={{
-        backgroundColor: theme.backgroundImage ? 'transparent' : theme.backgroundColor,
-        backgroundImage: theme.backgroundImage ? `url(${theme.backgroundImage})` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-        minHeight: 'calc(100vh - 60px)', // Adjust for header
-      }}
-    >
+    <div className="flex flex-col items-center justify-between">
       <div className="flex flex-col items-center w-full gap-2 px-4 md:flex-row md:justify-start md:gap-5 md:px-10">
         <h1 className="py-5 ml-5 font-medium text-gray-300 text-sm font-inter w-fit">
           Host:{" "}
@@ -194,11 +161,12 @@ function Host() {
         </Link>
       </div>
       <div className="grid w-full h-auto grid-cols-1 lg:grid-cols-[1fr_1.5fr_1fr] gap-10 px-4 md:px-10 pb-10 items-start">
-        <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 items-center justify-between p-4 md:p-10 shadow-lg">
+        <div className={`flex flex-col w-full min-h-[70%] rounded-xl items-center justify-between p-4 md:p-10 shadow-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-600'}`}>
           <div className="flex flex-col items-center justify-center gap-2">
             {currentCol && (
               <div
-                className={`flex items-center justify-center text-3xl md:text-4xl font-bold ${currentCol.bgColor} rounded-lg text-gray-50 w-12 h-12 md:w-14 md:h-14 font-inter`}
+                className={`flex items-center justify-center text-3xl md:text-4xl font-bold rounded-lg text-gray-50 w-12 h-12 md:w-14 md:h-14 font-inter`}
+                style={{ backgroundColor: theme.columnColors[currentCol.label] }}
               >
                 {currentCol.label}
               </div>
@@ -224,14 +192,15 @@ function Host() {
             </p>
           )}
         </div>
-        <div className="flex flex-col items-start justify-start w-full p-4 bg-gray-600 shadow-lg md:p-10 h-fit rounded-xl">
+        <div className={`flex flex-col items-start justify-start w-full p-4 shadow-lg md:p-10 h-fit rounded-xl ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-600'}`}>
           {columns.map((col, charIndex) => (
             <div
               key={col.label}
               className="flex flex-row items-start justify-center w-full gap-2 md:gap-5 h-fit"
             >
               <div
-                className={`flex items-center justify-center w-8 h-8 mt-2 text-base md:text-lg font-bold ${col.bgColor} rounded-md text-gray-50 font-inter`}
+                className={`flex items-center justify-center w-8 h-8 mt-2 text-base md:text-lg font-bold rounded-md text-gray-50 font-inter`}
+                 style={{ backgroundColor: theme.columnColors[col.label] }}
               >
                 {col.label}
               </div>
@@ -242,9 +211,8 @@ function Host() {
                   return (
                     <div
                       key={number}
-                      className={`flex items-center justify-center text-xs md:text-sm font-medium text-center text-gray-50 rounded-md w-6 h-6 md:w-7 md:h-7 ${
-                        isAvailable ? "bg-gray-500" : col.bgColor
-                      }`}
+                      className={`flex items-center justify-center text-xs md:text-sm font-medium text-center text-gray-50 rounded-md w-6 h-6 md:w-7 md:h-7`}
+                      style={{ backgroundColor: isAvailable ? '#6b7280' : theme.columnColors[col.label] }}
                     >
                       {number}
                     </div>
@@ -254,7 +222,7 @@ function Host() {
             </div>
           ))}
         </div>
-        <div className="flex flex-col w-full h-[70%] rounded-xl bg-gray-600 shadow-lg">
+        <div className={`flex flex-col w-full h-[70%] rounded-xl shadow-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-600'}`}>
           <div className="flex flex-row items-center justify-between p-2">
             <div className="flex flex-row items-center">
               <h1 className="font-medium text-gray-300 font-inter text-md w-fit">
@@ -311,9 +279,8 @@ function Host() {
                         .map((num, index) => (
                           <span
                             key={index}
-                            className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5 ${getNumberColor(
-                              num
-                            )}`}
+                            className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5`}
+                            style={getNumberStyle(num)}
                           >
                             {num}
                           </span>

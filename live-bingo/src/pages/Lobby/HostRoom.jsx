@@ -13,6 +13,29 @@ function HostRoom() {
   const listRef = useRef(null);
   const navigate = useNavigate();
 
+  // A small preview for the winning pattern
+  const PatternPreview = ({ pattern }) => {
+    return (
+      <div className="grid grid-cols-5 gap-0.5 p-1 bg-gray-600 rounded-sm">
+        {Array.from({ length: 25 }, (_, index) => {
+          const row = Math.floor(index / 5);
+          const col = index % 5;
+          const colMajorIndex = col * 5 + row;
+          const isSelected =
+            (pattern && pattern.index.includes(colMajorIndex)) || index === 12;
+          return (
+            <div
+              key={index}
+              className={`w-3 h-3 rounded-sm ${
+                isSelected ? "bg-blue-400" : "bg-gray-400/50"
+              }`}
+            ></div>
+          );
+        })}
+      </div>
+    );
+  };
+
   // New validation function
   const validateInputs = () => {
     const newErrors = {};
@@ -64,7 +87,7 @@ function HostRoom() {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [host]); // Re-bind listener if host state changes
+  }, [host, hostGame]); // Re-bind listener if host state changes
 
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
@@ -115,8 +138,16 @@ function HostRoom() {
   };
 
   return (
-    <div className="flex justify-center w-full h-full bg-gray-900 md:justify-start">
-      <section className="flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 md:mt-32 w-fit h-fit">
+    <div
+      className={`flex justify-center w-full h-full md:justify-start ${
+        theme.isTransparent ? "" : "bg-gray-900"
+      }`}
+    >
+      <section
+        className={`flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 md:mt-32 w-fit h-fit rounded-lg ${
+          theme.isTransparent ? "glass-morphism" : ""
+        }`}
+      >
         <h1 className="text-lg font-medium md:text-2xl font-inter text-gray-50">
           Host a game
         </h1>
@@ -193,7 +224,7 @@ function HostRoom() {
             )}
           </div>
         </div>
-        <div className="flex flex-col gap-2 pb-6">
+        <div className="flex flex-col gap-4 pb-6">
           <label
             className={`font-normal text-md w-fit font-inter ${
               errors.cardWinningPattern ? "text-red-500" : "text-gray-50"
@@ -201,46 +232,72 @@ function HostRoom() {
           >
             Winning card pattern
           </label>
-          <div className="flex flex-row items-center justify-center gap-2 w-fit">
-            <input
-              onClick={(e) => handleCardPattern(e.target.value)}
-              id="blackout"
-              type="radio"
-              value="Blackout"
-              name="cardPattern"
-              className="w-5 h-5 rounded-md outline-none"
-              checked={host.cardWinningPattern.name === "Blackout"}
-            />
+          <div className="flex flex-row items-stretch justify-start gap-4 w-fit">
             <label
               htmlFor="blackout"
-              className="text-sm font-normal cursor-pointer text-gray-50 w-fit font-inter"
+              className={`flex flex-col items-start gap-2 p-3 border-2 rounded-md cursor-pointer transition-all ${
+                host.cardWinningPattern.name === "Blackout"
+                  ? "border-blue-500 bg-blue-500/10"
+                  : "border-gray-600 hover:border-blue-500"
+              }`}
             >
-              Blackout
+              <div className="flex items-center gap-2">
+                <input
+                  onClick={(e) => handleCardPattern(e.target.value)}
+                  id="blackout"
+                  type="radio"
+                  value="Blackout"
+                  name="cardPattern"
+                  className="w-5 h-5 rounded-md outline-none accent-blue-500"
+                  checked={host.cardWinningPattern.name === "Blackout"}
+                />
+                <span className="text-sm font-normal text-gray-50 w-fit font-inter">
+                  Blackout
+                </span>
+              </div>
+              <div className="grid grid-cols-5 gap-0.5 p-1 bg-gray-600 rounded-sm">
+                {Array.from({ length: 25 }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="w-3 h-3 bg-blue-400 rounded-sm"
+                  ></div>
+                ))}
+              </div>
             </label>
-          </div>
-          <div className="flex flex-row items-center justify-center gap-2 mt-2 w-fit">
-            <input
-              id="customize"
-              type="radio"
-              name="cardPattern"
-              value="Customize"
-              className="w-5 h-5 rounded-md outline-none"
-              onClick={(e) => handleCardPattern(e.target.value)}
-              checked={
-                host.cardWinningPattern.name &&
-                host.cardWinningPattern.name !== "Blackout"
-              }
-            />
+
             <label
               htmlFor="customize"
-              className="text-sm font-normal cursor-pointer text-gray-50 w-fit font-inter"
+              className={`flex flex-col items-start gap-2 p-3 border-2 rounded-md cursor-pointer transition-all ${
+                host.cardWinningPattern.name &&
+                host.cardWinningPattern.name !== "Blackout"
+                  ? "border-blue-500 bg-blue-500/10"
+                  : "border-gray-600 hover:border-blue-500"
+              }`}
             >
-              {host.cardWinningPattern.name &&
-              host.cardWinningPattern.name !== "Blackout"
-                ? host.cardWinningPattern.name
-                : "Customize"}
+              <div className="flex items-center gap-2">
+                <input
+                  id="customize"
+                  type="radio"
+                  name="cardPattern"
+                  value="Customize"
+                  className="w-5 h-5 rounded-md outline-none accent-blue-500"
+                  onClick={(e) => handleCardPattern(e.target.value)}
+                  checked={
+                    host.cardWinningPattern.name &&
+                    host.cardWinningPattern.name !== "Blackout"
+                  }
+                />
+                <span className="text-sm font-normal text-gray-50 w-fit font-inter">
+                  {host.cardWinningPattern.name &&
+                  host.cardWinningPattern.name !== "Blackout"
+                    ? host.cardWinningPattern.name
+                    : "Customize"}
+                </span>
+              </div>
+              <PatternPreview pattern={host.cardWinningPattern} />
             </label>
           </div>
+
           {errors.cardWinningPattern && (
             <p className="mt-1 text-xs text-red-500">
               {errors.cardWinningPattern}
@@ -253,15 +310,16 @@ function HostRoom() {
         >
           Host
         </button>
-        <div className="flex items-center justify-center w-full gap-1 font-normal text-gray-400 font-inter text-md">
+        <Link
+          to="/theme"
+          className="flex items-center justify-center w-full h-12 mt-2 text-lg font-medium bg-purple-600 rounded-md text-gray-50 hover:bg-purple-700"
+        >
+          Customize Theme
+        </Link>
+        <div className="flex items-center justify-center w-full gap-1 mt-4 font-normal text-gray-400 font-inter text-md">
           Joining a game?{" "}
           <Link className="text-blue-400" to={"/"}>
             Enter room
-          </Link>
-        </div>
-        <div className="flex items-center justify-center w-full mt-4">
-          <Link to="/theme" className="text-blue-400">
-            Customize Theme
           </Link>
         </div>
       </section>

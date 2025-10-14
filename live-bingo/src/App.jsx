@@ -1,8 +1,5 @@
 // src/App.jsx
-import {
-  createBrowserRouter,
-  RouterProvider,
-} from "react-router-dom";
+import { createBrowserRouter, RouterProvider } from "react-router-dom";
 import Lobby from "./pages/Lobby/Lobby";
 import Game from "./pages/Game/Game";
 import JoinRoom from "./pages/Lobby/JoinRoom";
@@ -15,6 +12,7 @@ import { useContext, useEffect } from "react";
 import GameContext from "./context/GameContext";
 import { socket } from "./utils/socket";
 import Theme from "./pages/Theme/Theme"; // Import the Theme component
+import "./background.css"; // Import the new background stylesheet
 
 // This component lives inside the router and handles navigation events
 const NavigationHandler = () => {
@@ -36,7 +34,8 @@ const NavigationHandler = () => {
   return null;
 };
 
-function App() {
+function AppContent() {
+  const { theme } = useContext(GameContext);
   const router = createBrowserRouter([
     {
       path: "/",
@@ -69,8 +68,23 @@ function App() {
     },
   ]);
   return (
-    <GameProvider>
+    <>
+      <div
+        className="background-container"
+        style={{
+          backgroundColor: theme.backgroundColor,
+          backgroundImage: `url(${theme.backgroundImage})`,
+        }}
+      />
       <RouterProvider router={router} />
+    </>
+  );
+}
+
+function App() {
+  return (
+    <GameProvider>
+      <AppContent />
     </GameProvider>
   );
 }

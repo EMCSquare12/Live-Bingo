@@ -64,36 +64,11 @@ function Player() {
   };
 
   const columns = [
-    {
-      label: "B",
-      range: [1, 15],
-      textColor: " text-blue-500",
-      bgColor: "bg-blue-500",
-    },
-    {
-      label: "I",
-      range: [16, 30],
-      textColor: "text-red-500",
-      bgColor: "bg-red-500 ",
-    },
-    {
-      label: "N",
-      range: [31, 45],
-      textColor: "text-gray-400",
-      bgColor: "bg-gray-400  ",
-    },
-    {
-      label: "G",
-      range: [46, 60],
-      textColor: "text-green-500",
-      bgColor: "bg-green-500  ",
-    },
-    {
-      label: "O",
-      range: [61, 75],
-      textColor: "text-yellow-500",
-      bgColor: "bg-yellow-500 ",
-    },
+    { label: "B", range: [1, 15] },
+    { label: "I", range: [16, 30] },
+    { label: "N", range: [31, 45] },
+    { label: "G", range: [46, 60] },
+    { label: "O", range: [61, 75] },
   ];
 
   const FaCopy = () => (
@@ -133,15 +108,10 @@ function Player() {
       : null;
 
   return (
- <div
+    <div
       className="grid w-full h-full min-h-screen grid-cols-[40%_60%] items-start justify-start "
-      style={{
-        backgroundColor: theme.backgroundImage ? 'transparent' : theme.backgroundColor,
-        backgroundImage: theme.backgroundImage ? `url(${theme.backgroundImage})` : 'none',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-      }}
-    >     <div className="flex flex-col h-full gap-6 px-10 bg-gray-800">
+    >
+      <div className={`flex flex-col h-full gap-6 px-10 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
         <div className="flex flex-row items-center justify-between w-full p-4 -mb-6">
            <div className="flex gap-1 flex-col">
             <h1 className="font-medium text-gray-300 text-sm font-inter">
@@ -173,7 +143,8 @@ function Player() {
         <div className="flex flex-row items-center justify-center gap-6 py-5 border-t border-b border-gray-500">
           {col && (
             <div
-              className={`flex items-center justify-center font-bold text-7xl ${col.bgColor}  rounded-lg text-gray-50 w-24 h-24 font-inter`}
+              className={`flex items-center justify-center font-bold text-7xl rounded-lg text-gray-50 w-24 h-24 font-inter`}
+              style={{ backgroundColor: theme.columnColors[col.label] }}
             >
               {col.label}
             </div>
@@ -187,12 +158,13 @@ function Player() {
           <h1 className="flex flex-col -mt-3 font-medium text-gray-300 text-md font-inter">
             Number Called:
           </h1>
-          <ul className="flex flex-col w-full gap-2 p-1 mt-3 bg-gray-700 rounded-md">
-            {columns.map(({ label, range, textColor, bgColor }) => (
+          <ul className={`flex flex-col w-full gap-2 p-1 mt-3 rounded-md ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-700'}`}>
+            {columns.map(({ label, range }) => (
               <li key={label}>
                 <ul className="flex flex-row items-center justify-start gap-2">
                   <span
-                    className={`flex items-center justify-center text-2xl font-bold rounded-sm font-inter mr-4 w-6  ${textColor}`}
+                    className={`flex items-center justify-center text-2xl font-bold rounded-sm font-inter mr-4 w-6`}
+                    style={{ color: theme.columnColors[label] }}
                   >
                     {label}
                   </span>
@@ -202,7 +174,8 @@ function Player() {
                     .map((value, index) => (
                       <li
                         key={index}
-                        className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5 ${bgColor}`}
+                        className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5`}
+                        style={{ backgroundColor: theme.columnColors[label] }}
                       >
                         {value}
                       </li>

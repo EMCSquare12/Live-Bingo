@@ -1,12 +1,32 @@
 // src/pages/Theme/Theme.jsx
-import React, { useContext } from 'react';
+import React, { useContext, useState } from 'react';
 import { Link } from 'react-router-dom';
 import GameContext from '../../context/GameContext';
 import BingoCard from '../../components/BingoCard';
 import { socket } from '../../utils/socket';
 
+const themes = {
+  default: {
+    color: '#374151',
+    backgroundColor: '#111827',
+    backgroundImage: '',
+    cardGridColor: '#4b5563',
+    columnColors: { B: '#3b82f6', I: '#ef4444', N: '#9ca3af', G: '#22c55e', O: '#eab308' },
+    isTransparent: false,
+  },
+  transparent: {
+    color: 'rgba(31, 41, 55, 0.5)', // bg-gray-800 with opacity
+    backgroundColor: '#1a1a1a',
+    backgroundImage: 'https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?q=80&w=2787&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    cardGridColor: 'rgba(255, 255, 255, 0.1)',
+    columnColors: { B: '#3b82f6', I: '#ef4444', N: '#9ca3af', G: '#22c55e', O: '#eab308' },
+    isTransparent: true,
+  },
+};
+
 const Theme = () => {
-  const { theme, setTheme, roomCode } = useContext(GameContext);
+  const { theme, setTheme, roomCode, host, player } = useContext(GameContext);
+  const [activeColorPicker, setActiveColorPicker] = useState(null);
 
   const dummyLetterNumber = {
     B: [8, 12, 1, 9, 4],
@@ -24,12 +44,28 @@ const Theme = () => {
     }
   };
 
+  const handleThemeSelection = (themeName) => {
+    const newTheme = themes[themeName];
+    handleThemeChange({ ...newTheme, name: themeName });
+  };
+
+  const handleColumnColorChange = (column, color) => {
+    const newTheme = {
+      ...theme,
+      columnColors: {
+        ...theme.columnColors,
+        [column]: color,
+      }
+    };
+    handleThemeChange(newTheme);
+  };
+
   const handleColorChange = (e) => {
     handleThemeChange({ ...theme, color: e.target.value });
   };
 
   const handleBackgroundColorChange = (e) => {
-    handleThemeChange({ ...theme, backgroundColor: e.target.value });
+    handleThemeChange({ ...theme, backgroundColor: e.target.value, backgroundImage: '' });
   };
 
   const handleBackgroundImageChange = (e) => {
@@ -47,24 +83,29 @@ const Theme = () => {
     handleThemeChange({ ...theme, cardGridColor: e.target.value });
   };
 
-  const handleCardLetterColorChange = (e) => {
-    handleThemeChange({ ...theme, cardLetterColor: e.target.value });
-  };
-
-  const handleCardNumberColorChange = (e) => {
-    handleThemeChange({ ...theme, cardNumberColor: e.target.value });
-  };
-
   const handleRemoveBackgroundImage = () => {
     handleThemeChange({ ...theme, backgroundImage: '' });
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 w-screen h-screen bg-gray-900 text-gray-50">
+    <div className="grid grid-cols-1 md:grid-cols-2 w-screen h-screen bg-gray-900/50 text-gray-50">
       <div className="flex flex-col items-center justify-center p-8">
-        <div className="p-8 bg-gray-800 rounded-lg shadow-xl w-full max-w-md">
+        <div className={`p-8 bg-gray-800 rounded-lg shadow-xl w-full max-w-md ${theme.isTransparent ? 'glass-morphism' : ''}`}>
           <h1 className="text-3xl font-bold text-center mb-6">Theme Customization</h1>
           <div className="space-y-4">
+             <div className="flex items-center justify-between">
+              <label className="text-lg">Theme:</label>
+              <div className="flex items-center space-x-4">
+                <label>
+                  <input type="radio" name="theme" value="default" onChange={() => handleThemeSelection('default')} checked={theme.name === 'default'} className="mr-2"/>
+                  Default
+                </label>
+                <label>
+                  <input type="radio" name="theme" value="transparent" onChange={() => handleThemeSelection('transparent')} checked={theme.name === 'transparent'} className="mr-2"/>
+                  Transparent
+                </label>
+              </div>
+            </div>
             <div className="flex items-center justify-between">
               <label htmlFor="card-color-picker" className="text-lg">Bingo Card:</label>
               <input id="card-color-picker" type="color" value={theme.color} onChange={handleColorChange} className="w-16 h-10 p-1 bg-gray-700 border border-gray-600 rounded-md"/>
@@ -72,14 +113,6 @@ const Theme = () => {
             <div className="flex items-center justify-between">
               <label htmlFor="grid-color-picker" className="text-lg">Card Grid:</label>
               <input id="grid-color-picker" type="color" value={theme.cardGridColor} onChange={handleCardGridColorChange} className="w-16 h-10 p-1 bg-gray-700 border border-gray-600 rounded-md"/>
-            </div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="letter-color-picker" className="text-lg">Card Letters:</label>
-              <input id="letter-color-picker" type="color" value={theme.cardLetterColor} onChange={handleCardLetterColorChange} className="w-16 h-10 p-1 bg-gray-700 border border-gray-600 rounded-md"/>
-            </div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="number-color-picker" className="text-lg">Card Numbers:</label>
-              <input id="number-color-picker" type="color" value={theme.cardNumberColor} onChange={handleCardNumberColorChange} className="w-16 h-10 p-1 bg-gray-700 border border-gray-600 rounded-md"/>
             </div>
             <div className="flex items-center justify-between">
               <label htmlFor="background-color-picker" className="text-lg">Background:</label>
@@ -94,25 +127,20 @@ const Theme = () => {
             </div>
           </div>
           <div className="mt-8 text-center">
-            <Link to={roomCode ? `/${roomCode}` : "/host"} className="px-6 py-3 font-medium bg-blue-600 rounded-md hover:bg-blue-700">Back to Game</Link>
+            <Link to={roomCode ? (host.isHost ? `/${roomCode}`: `/${roomCode}/${player.id}`) : "/host"} className="px-6 py-3 font-medium bg-blue-600 rounded-md hover:bg-blue-700">Back to Game</Link>
           </div>
         </div>
       </div>
-      <div
-        className="flex items-center justify-center p-8"
-        style={{
-          backgroundColor: theme.backgroundImage ? 'transparent' : theme.backgroundColor,
-          backgroundImage: theme.backgroundImage ? `url(${theme.backgroundImage})` : 'none',
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
+      <div className="flex items-center justify-center p-8">
         <BingoCard
           letterNumber={dummyLetterNumber}
           handleRefresh={() => {}}
           markedNumbers={dummyMarkedNumbers}
           handleNumberClick={() => {}}
+          onLetterClick={setActiveColorPicker}
+          activeColorPicker={activeColorPicker}
+          onColumnColorChange={handleColumnColorChange}
+          isThemeEditor={true}
         />
       </div>
     </div>

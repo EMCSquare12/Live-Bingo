@@ -7,7 +7,7 @@ function JoinRoom() {
   const [errors, setErrors] = useState({});
   const [isJoining, setIsJoining] = useState(false);
   const navigate = useNavigate();
-  const { setRoomCode, roomCode, player, setPlayer, setHost, setTheme } =
+  const { setRoomCode, roomCode, player, setPlayer, setHost, setTheme, theme } =
     useContext(GameContext);
 
   // This effect hook handles the responses from the server after trying to join.
@@ -113,8 +113,8 @@ function JoinRoom() {
     : "";
 
   return (
-    <div className="flex justify-center w-full h-full bg-gray-900 md:justify-start">
-      <section className="flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 md:mt-32 w-fit h-fit">
+    <div className={`flex justify-center w-full h-full md:justify-start ${theme.isTransparent ? '' : 'bg-gray-900'}`}>
+      <section className={`flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 md:mt-32 w-fit h-fit rounded-lg ${theme.isTransparent ? 'glass-morphism' : ''}`}>
         <h1 className="text-lg font-medium md:text-2xl font-inter text-gray-50">
           Join a game
         </h1>
