@@ -1,6 +1,6 @@
 import { useContext, useEffect, useState } from "react";
 import GameContext from "../../context/GameContext";
-import { useLocation } from "react-router-dom";
+import { useLocation, Link } from "react-router-dom";
 import { socket } from "../../utils/socket";
 
 // SVG Icon Components to replace react-icons
@@ -45,6 +45,7 @@ function Host() {
     isShuffling,
     displayNumber,
     winMessage,
+    theme, // Get theme from context
   } = useContext(GameContext);
   const location = useLocation();
 
@@ -152,7 +153,17 @@ function Host() {
   );
 
   return (
-    <div className="flex flex-col items-center justify-between bg-gray-900">
+<div
+      className="flex flex-col items-center justify-between"
+      style={{
+        backgroundColor: theme.backgroundImage ? 'transparent' : theme.backgroundColor,
+        backgroundImage: theme.backgroundImage ? `url(${theme.backgroundImage})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+        minHeight: 'calc(100vh - 60px)', // Adjust for header
+      }}
+    >
       <div className="flex flex-col items-center w-full gap-2 px-4 md:flex-row md:justify-start md:gap-5 md:px-10">
         <h1 className="py-5 ml-5 font-medium text-gray-300 text-sm font-inter w-fit">
           Host:{" "}
@@ -175,6 +186,12 @@ function Host() {
             )}
           </button>
         </h1>
+         <Link
+          to="/theme"
+          className="px-3 py-1 font-medium text-gray-100 bg-purple-600 rounded-md text-md font-inter hover:bg-purple-700"
+        >
+          Theme
+        </Link>
       </div>
       <div className="grid w-full h-auto grid-cols-1 lg:grid-cols-[1fr_1.5fr_1fr] gap-10 px-4 md:px-10 pb-10 items-start">
         <div className="flex flex-col w-full min-h-[70%] rounded-xl bg-gray-600 items-center justify-between p-4 md:p-10 shadow-lg">

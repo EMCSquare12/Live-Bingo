@@ -12,6 +12,7 @@ function Player() {
     roomCode,
     setWinMessage,
     setShowConfetti,
+    theme,
   } = useContext(GameContext);
   const [copied, setCopied] = useState(false);
   const cards = player.cards ?? [];
@@ -132,8 +133,15 @@ function Player() {
       : null;
 
   return (
-    <div className="grid w-full h-full min-h-screen grid-cols-[40%_60%] bg-gray-900 items-start justify-start ">
-      <div className="flex flex-col h-full gap-6 px-10 bg-gray-800">
+ <div
+      className="grid w-full h-full min-h-screen grid-cols-[40%_60%] items-start justify-start "
+      style={{
+        backgroundColor: theme.backgroundImage ? 'transparent' : theme.backgroundColor,
+        backgroundImage: theme.backgroundImage ? `url(${theme.backgroundImage})` : 'none',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >     <div className="flex flex-col h-full gap-6 px-10 bg-gray-800">
         <div className="flex flex-row items-center justify-between w-full p-4 -mb-6">
            <div className="flex gap-1 flex-col">
             <h1 className="font-medium text-gray-300 text-sm font-inter">

@@ -1,3 +1,4 @@
+// src/pages/Lobby/HostRoom.jsx
 import { useState, useEffect, useRef, useContext } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { IoIosArrowDown, IoIosArrowUp } from "react-icons/io";
@@ -5,7 +6,7 @@ import GameContext from "../../context/GameContext";
 import { socket } from "../../utils/socket";
 
 function HostRoom() {
-  const { setIsOpenModal, host, setHost, setRoomCode } =
+  const { setIsOpenModal, host, setHost, setRoomCode, theme } =
     useContext(GameContext);
   const [isClickList, setIsClickList] = useState(false);
   const [errors, setErrors] = useState({}); // State to hold validation errors
@@ -33,7 +34,8 @@ function HostRoom() {
       "create-room",
       host.hostName,
       host.cardNumber,
-      host.cardWinningPattern
+      host.cardWinningPattern,
+      theme
     );
   };
 
@@ -255,6 +257,11 @@ function HostRoom() {
           Joining a game?{" "}
           <Link className="text-blue-400" to={"/"}>
             Enter room
+          </Link>
+        </div>
+        <div className="flex items-center justify-center w-full mt-4">
+          <Link to="/theme" className="text-blue-400">
+            Customize Theme
           </Link>
         </div>
       </section>

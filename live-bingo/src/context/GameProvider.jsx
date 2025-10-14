@@ -1,3 +1,4 @@
+// src/context/GameProvider.jsx
 import { useState, useMemo, useEffect } from "react";
 import GameContext from "./GameContext";
 import { socket } from "../utils/socket";
@@ -17,7 +18,14 @@ const GameProvider = ({ children }) => {
     onConfirm: () => {},
     onCancel: () => {},
   });
-
+ const [theme, setTheme] = useState({
+    color: '#374151',
+    backgroundColor: '#111827',
+    backgroundImage: '',
+    cardGridColor: '#4b5563',
+    cardLetterColor: '#ffffff',
+    cardNumberColor: '#ffffff',
+  });
   const [isShuffling, setIsShuffling] = useState(false);
   const [displayNumber, setDisplayNumber] = useState(null);
 
@@ -40,6 +48,18 @@ const GameProvider = ({ children }) => {
   const [bingoNumbers, setBingoNumbers] = useState(initialBingoNumbers);
   const [player, setPlayer] = useState(initialPlayerState);
   const [host, setHost] = useState(initialHostState);
+
+  useEffect(() => {
+    const handleThemeUpdate = (newTheme) => {
+      setTheme(newTheme);
+    };
+
+    socket.on("theme-updated", handleThemeUpdate);
+
+    return () => {
+      socket.off("theme-updated", handleThemeUpdate);
+    };
+  }, []);
 
   useEffect(() => {
     if (showConfetti) {
@@ -250,6 +270,8 @@ const GameProvider = ({ children }) => {
       setShowConfetti,
       isShuffling,
       displayNumber,
+      theme,
+      setTheme,
     }),
     [
       isOpenModal,
@@ -266,6 +288,7 @@ const GameProvider = ({ children }) => {
       showConfetti,
       isShuffling,
       displayNumber,
+      theme,
     ]
   );
 

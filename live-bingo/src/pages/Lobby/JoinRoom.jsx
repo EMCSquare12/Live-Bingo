@@ -4,10 +4,10 @@ import GameContext from "../../context/GameContext";
 import { socket } from "../../utils/socket";
 
 function JoinRoom() {
-  const [errors, setErrors] = useState({}); // State for validation errors
-  const [isJoining, setIsJoining] = useState(false); // State to handle submission status
+  const [errors, setErrors] = useState({});
+  const [isJoining, setIsJoining] = useState(false);
   const navigate = useNavigate();
-  const { setRoomCode, roomCode, player, setPlayer, setHost } =
+  const { setRoomCode, roomCode, player, setPlayer, setHost, setTheme } =
     useContext(GameContext);
 
   // This effect hook handles the responses from the server after trying to join.
@@ -31,10 +31,13 @@ function JoinRoom() {
       setPlayer(newPlayer);
       setHost({
         ...hostState,
-        isHost: false, // Ensure player is not marked as host
+        isHost: false,
       });
+      if (gameState.theme) {
+        setTheme(gameState.theme);
+      }
 
-      setIsJoining(false); // Re-enable on success before navigating
+      setIsJoining(false);
       navigate(`/${joinedRoomCode}/${newPlayer.id}`);
     };
 
@@ -47,7 +50,7 @@ function JoinRoom() {
       socket.off("game-started", handleGameStarted);
       socket.off("joined-room", handleJoinedRoom);
     };
-  }, [navigate, setPlayer, setRoomCode, setHost]);
+  }, [navigate, setPlayer, setRoomCode, setHost, setTheme]);
 
   const validateInputs = () => {
     const newErrors = {};
