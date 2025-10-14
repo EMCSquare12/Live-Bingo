@@ -39,6 +39,14 @@ function calculateBestCardResult(cards, winningPattern, markedNumbers = []) {
   return bestCardResult || [];
 }
 
+function updateTheme(io, roomCode, newTheme) {
+  const game = games[roomCode];
+  if (game) {
+    game.theme = newTheme;
+    // Broadcast to all clients in the room, including the sender (host)
+    io.to(roomCode).emit("theme-updated", newTheme);
+  }
+}
 function rollAndShuffleNumber(io, socket, roomCode) {
   const game = games[roomCode];
   if (
@@ -74,6 +82,7 @@ function rollAndShuffleNumber(io, socket, roomCode) {
 }
 
 
+
 function endGame(io, roomCode) {
   const game = games[roomCode];
   if (game) {
@@ -97,7 +106,7 @@ function endGame(io, roomCode) {
   }
 }
 
-function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
+function createRoom(io, socket, hostName, cardNumber, cardWinningPattern, theme) {
   const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
   const hostId = uuidv4();
 
@@ -114,6 +123,14 @@ function createRoom(io, socket, hostName, cardNumber, cardWinningPattern) {
     isNewRoundStarting: false,
     disconnectTimeout: null, // To manage host disconnects
     isShuffling: false, // Add this to prevent multiple rolls
+    theme: theme || { // Add theme with a fallback default
+      color: '#374151',
+      backgroundColor: '#111827',
+      backgroundImage: '',
+      cardGridColor: '#4b5563',
+      cardLetterColor: '#ffffff',
+      cardNumberColor: '#ffffff',
+    },
   };
 
   socket.join(roomCode);
@@ -446,4 +463,5 @@ module.exports = {
   refreshCard,
   updateWinningPattern,
   markNumber,
+    updateTheme,
 };
