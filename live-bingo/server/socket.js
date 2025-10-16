@@ -1,6 +1,5 @@
 // server/socket.js
-const { createRoom, joinRoom, handleDisconnect, reconnectPlayer, newGame, leaveGame, endGame, rollAndShuffleNumber, refreshCard, markNumber, updateTheme } = require("./gameManager");
-
+const { createRoom, joinRoom, handleDisconnect, reconnectPlayer, newGame, leaveGame, endGame, rollAndShuffleNumber, refreshCard, markNumber, updateTheme, updateWinningPattern } = require("./gameManager");
 function registerSocketHandlers(io) {
   io.on("connection", (socket) => {
     console.log("🔗 New client connected:", socket.id);
@@ -45,6 +44,9 @@ function registerSocketHandlers(io) {
     socket.on("update-theme", (roomCode, newTheme) => {
       updateTheme(io, roomCode, newTheme);
     });
+    socket.on("update-winning-pattern", (roomCode, newPattern) => {
+      updateWinningPattern(io, socket, roomCode, newPattern);
+    })
 
     socket.on("disconnect", () => {
       handleDisconnect(io, socket);

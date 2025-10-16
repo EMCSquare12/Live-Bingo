@@ -169,8 +169,7 @@ function joinRoom(io, socket, playerName, roomCode) {
   socket.emit("joined-room", roomCode, { ...game, newPlayer: player });
 
   if (game.hostSocketId) {
-    io.to(game.hostSocketId).emit("players", game.players);
-  }
+io.to(roomCode).emit("players", game.players);  }
 }
 
 function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
