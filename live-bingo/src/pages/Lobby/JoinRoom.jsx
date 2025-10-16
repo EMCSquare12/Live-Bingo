@@ -114,7 +114,7 @@ function JoinRoom() {
 
   return (
     <div className={`flex justify-center w-full h-full md:justify-start ${theme.isTransparent ? '' : 'bg-gray-900'}`}>
-      <section className={`flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 md:mt-32 w-fit h-fit rounded-lg ${theme.isTransparent ? 'glass-morphism' : ''}`}>
+      <section className={`flex flex-col gap-4 px-8 mt-16 py-4 mb-16 md:px-16 md:mt-32 w-fit h-fit rounded-lg ${theme.isTransparent ? 'glass-morphism' : ''}`}>
         <h1 className="text-lg font-medium md:text-2xl font-inter text-gray-50">
           Join a game
         </h1>

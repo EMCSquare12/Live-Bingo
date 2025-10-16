@@ -144,7 +144,7 @@ function HostRoom() {
       }`}
     >
       <section
-        className={`flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 md:mt-32 w-fit h-fit rounded-lg ${
+        className={`flex flex-col gap-4 px-8 mt-16 mb-16 md:px-16 py-4 md:mt-32 w-fit h-fit rounded-lg ${
           theme.isTransparent ? "glass-morphism" : ""
         }`}
       >

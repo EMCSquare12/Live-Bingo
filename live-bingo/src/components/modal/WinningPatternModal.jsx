@@ -3,7 +3,7 @@ import GameContext from "../../context/GameContext";
 import { GiRoundStar } from "react-icons/gi";
 
 const WinningPatternModal = () => {
-  const { isOpenModal, setIsOpenModal, host, setHost, theme } =
+  const { isOpenModal, setIsOpenModal, host, setHost, theme, roomCode }=
     useContext(GameContext);
 
   // Store the pattern on open, to revert on cancel
@@ -20,16 +20,22 @@ const WinningPatternModal = () => {
     setIsOpenModal(false);
   };
 
-  const handleConfirm = () => {
-    if (!host.cardWinningPattern.name) {
-      setHost((prev) => ({
-        ...prev,
-        cardWinningPattern: {
-          ...prev.cardWinningPattern,
-          name: "Customize",
-        },
-      }));
+const handleConfirm = () => {
+    const finalPattern = {
+      ...host.cardWinningPattern,
+      name: host.cardWinningPattern.name || "Customize",
+    };
+
+    setHost((prev) => ({
+      ...prev,
+      cardWinningPattern: finalPattern,
+    }));
+
+    // 👇 Emit the update to the server
+    if (roomCode) {
+      socket.emit("update-winning-pattern", roomCode, finalPattern);
     }
+
     setIsOpenModal(false);
   };
 

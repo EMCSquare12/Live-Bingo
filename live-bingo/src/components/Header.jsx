@@ -152,12 +152,11 @@ function Header() {
     });
   };
 
-  const isGameStarted = host.numberCalled && host.numberCalled.length > 0;
+  const isGameStarted = host.numberCalled && host.numberCalled.length > 1;
 
   return (
     <>
-      <div className={`flex justify-between w-screen px-2 py-3 border-b border-gray-900 h-fit md:px-8 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
-        <Logo />
+<div className={`relative z-20 flex justify-between w-screen px-2 py-3 border-b border-gray-900 h-fit md:px-8 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>        <Logo />
         <div className="relative z-10 flex items-center justify-center gap-2 px-3 -mt-2 -mb-2 font-medium text-gray-300 w-fit text-md font-inter ">
           Winning Pattern:{" "}
           <span
@@ -170,7 +169,7 @@ function Header() {
           {isClicked && !isOpenModal ? (
             <div
               ref={dropdownRef} // Attach the ref to the dropdown container
-              className={`absolute flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full w-60 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-50'}`}
+              className={`absolute z-10 flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full w-60 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-50'}`}
             >
               <WinningPatternCard />
               {host.isHost && (

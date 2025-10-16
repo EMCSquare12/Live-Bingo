@@ -222,6 +222,14 @@ const GameProvider = ({ children }) => {
         array: allNumbers.filter((num) => !numberCalledArray.includes(num)),
       }));
     };
+    const handleWinningPatternUpdated = (newPattern) => {
+      console.log("Client received winning-pattern-updated event");
+      setHost((prev) => ({
+        ...prev,
+        cardWinningPattern: newPattern,
+      }));
+    };
+
 
     socket.on("shuffling", handleShuffling);
     socket.on("number-called", handleNumberCalled);
@@ -230,6 +238,7 @@ const GameProvider = ({ children }) => {
     socket.on("reconnect-failed", handleReconnectFailed);
     socket.on("players-won", handlePlayersWon);
     socket.on("game-reset", handleGameReset);
+    socket.on("winning-pattern-updated", handleWinningPatternUpdated);
 
     return () => {
       socket.off("card-refreshed", handleCardRefreshed);
@@ -239,6 +248,7 @@ const GameProvider = ({ children }) => {
       socket.off("game-reset", handleGameReset);
       socket.off("number-called", handleNumberCalled);
       socket.off("shuffling", handleShuffling);
+      socket.off("winning-pattern-updated", handleWinningPatternUpdated);
     };
   }, [player.id, host.isHost]);
 
@@ -252,6 +262,21 @@ const GameProvider = ({ children }) => {
       sessionStorage.setItem("bingo-session", JSON.stringify(session));
     }
   }, [roomCode, player.id, host.isHost, host.id]);
+  
+
+  useEffect(() => {
+    if (!host.isHost && player.id) {
+      const updatedPlayer = host.players.find((p) => p.id === player.id);
+      if (updatedPlayer) {
+        setPlayer((prevPlayer) => {
+          if (JSON.stringify(prevPlayer) !== JSON.stringify(updatedPlayer)) {
+            return updatedPlayer;
+          }
+          return prevPlayer;
+        });
+      }
+    }
+  }, [host.players, player.id, host.isHost]);
 
   const value = useMemo(
     () => ({
