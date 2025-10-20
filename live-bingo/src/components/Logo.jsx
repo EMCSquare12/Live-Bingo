@@ -10,18 +10,18 @@ function Logo() {
     ],
   };
   return (
-    <div className="flex items-center justify-center h-auto gap-2 py-2 w-fit">
+    <div className="flex items-center justify-center h-auto gap-1 py-1 md:gap-2 md:py-2 w-fit"> {/* Adjusted gap and padding */}
       <div className="flex gap-2 px-2 border-2 border-white rounded-md">
         {Array.from({ length: 5 }, (_, index) => (
           <div
             key={index}
-            className={`flex items-center justify-center text-xl font-bold md:text-2xl ${charStyle.styles[index]}`}
+            className={`flex items-center justify-center text-lg md:text-2xl font-bold ${charStyle.styles[index]}`} // Adjusted font size
           >
             {charStyle.char[index]}
           </div>
         ))}
       </div>
-      <div className="text-xl font-bold tracking-wide text-white font-inter md:text-2xl">
+      <div className="text-lg font-bold tracking-wide text-white font-inter md:text-2xl"> {/* Adjusted font size */}
         Live
       </div>
     </div>

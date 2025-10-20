@@ -28,12 +28,13 @@ function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberCli
 
   return (
     <div
-      className={`relative flex flex-col gap-4 p-4 overflow-hidden rounded-lg shadow-lg w-fit h-fit ${theme.isTransparent ? 'glass-morphism' : ''}`}
+      // Adjusted padding and gap for smaller screens
+      className={`relative flex flex-col gap-2 p-3 md:gap-4 md:p-4 overflow-hidden rounded-lg shadow-lg w-fit h-fit ${theme.isTransparent ? 'glass-morphism' : ''}`}
       style={{ 
         backgroundColor: theme.color
       }}
     >
-      <div className="absolute top-0 right-0 flex flex-row overflow-hidden bg-white rounded-bl-lg h-fit w-fit bg-opacity-20">
+      <div className="absolute top-0 right-0 z-10 flex flex-row overflow-hidden bg-white rounded-bl-lg h-fit w-fit bg-opacity-20"> {/* Added z-index */}
         <button
           onClick={handleRefresh}
           disabled={isGameStarted}
@@ -49,17 +50,18 @@ function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberCli
           DIY
         </button>
       </div>
-      <div className="grid grid-cols-5 grid-rows-1 gap-2 py-2 mt-4 rounded-md h-fit">
+      {/* Adjusted BINGO letters size and spacing */}
+      <div className="grid grid-cols-5 grid-rows-1 gap-1 py-1 mt-4 md:gap-2 md:py-2 rounded-md h-fit">
         {columns.map((label) => (
           <div
             key={label}
-            className={`relative flex items-center justify-center w-12 text-4xl font-bold ${isThemeEditor ? 'cursor-pointer' : ''}`}
+            className={`relative flex items-center justify-center w-8 h-8 md:w-12 text-2xl md:text-4xl font-bold ${isThemeEditor ? 'cursor-pointer' : ''}`} // Adjusted size and font
             style={{ color: theme.columnColors[label] }}
             onClick={() => isThemeEditor && onLetterClick(label)}
           >
             {label}
             {isThemeEditor && activeColorPicker === label && (
-              <div ref={colorPickerRef} className="absolute top-full mt-2 z-10" onClick={(e) => e.stopPropagation()}>
+              <div ref={colorPickerRef} className="absolute z-10 mt-2 top-full" onClick={(e) => e.stopPropagation()}>
                 <input
                   type="color"
                   value={theme.columnColors[label]}
@@ -71,11 +73,12 @@ function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberCli
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-5 grid-rows-1 gap-2 rounded-md">
+      {/* Adjusted number grid size and spacing */}
+      <div className="grid grid-cols-5 grid-rows-1 gap-1 md:gap-2 rounded-md">
         {Object.keys(letterNumber).map((char, colIndex) => (
           <div
             key={colIndex}
-            className="grid grid-cols-1 grid-rows-5 gap-2 rounded-md"
+            className="grid grid-cols-1 grid-rows-5 gap-1 md:gap-2 rounded-md" // Adjusted gap
           >
             {letterNumber[char].map((num, rowIndex) => {
               const isCalled = host.numberCalled?.includes(num);
@@ -84,9 +87,9 @@ function BingoCard({ letterNumber, handleRefresh, markedNumbers, handleNumberCli
                 <div
                   key={rowIndex}
                   onClick={() => handleNumberClick(num)}
-                  className={`flex items-center justify-center w-12 h-12 text-xl font-bold rounded-md font-inter ${
+                  className={`flex items-center justify-center w-8 h-8 md:w-12 md:h-12 text-lg md:text-xl font-bold rounded-md font-inter ${ // Adjusted size and font
                     isCalled ? "cursor-pointer" : ""
-                  }`}
+                  } `}
                   style={{
                     backgroundColor: isCalled && isMarked ? '#6b7280' : theme.cardGridColor,
                     color: theme.columnColors[char],

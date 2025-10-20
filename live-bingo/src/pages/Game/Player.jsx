@@ -109,10 +109,10 @@ function Player() {
 
   return (
     <div
-      className="grid w-full h-full min-h-screen grid-cols-[40%_60%] items-start justify-start "
+      // Stack on mobile, grid on medium+ screens
+      className="flex flex-col w-full min-h-screen md:grid md:grid-cols-[40%_60%] items-start justify-start"
     >
-      <div className={`flex flex-col h-full gap-6 px-10 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
-        <div className="flex flex-row items-center justify-between w-full p-4 -mb-6">
+      <div className={`flex flex-col w-full md:h-full gap-4 p-4 md:px-10 md:gap-6 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>        <div className="flex flex-row items-center justify-between w-full p-4 -mb-6">
            <div className="flex gap-1 flex-col">
             <h1 className="font-medium text-gray-300 text-sm font-inter">
             Player: <span className="text-gray-50 font-bold">{player.name}</span>
@@ -140,25 +140,24 @@ function Player() {
           <h1 className="font-medium text-gray-300 text-sm font-inter">Card Number: <span className="text-gray-50 font-bold">{host.cardNumber}</span></h1>
           </div>
         </div>
-        <div className="flex flex-row items-center justify-center gap-6 py-5 border-t border-b border-gray-500">
+        <div className="flex flex-row items-center justify-center gap-4 py-4 border-t border-b border-gray-500 md:gap-6 md:py-5"> {/* Adjusted gap and padding */}
           {col && (
             <div
-              className={`flex items-center justify-center font-bold text-7xl rounded-lg text-gray-50 w-24 h-24 font-inter`}
+              className={`flex items-center justify-center font-bold text-4xl md:text-7xl rounded-lg text-gray-50 w-16 h-16 md:w-24 md:h-24 font-inter`} // Adjusted size for mobile
               style={{ backgroundColor: theme.columnColors[col.label] }}
             >
               {col.label}
             </div>
           )}
 
-          <div className="font-medium text-center w-fit text-9xl font-inter text-gray-50">
-            {displayNumber ?? "X"}
+          <div className="w-fit text-center font-medium text-7xl md:text-9xl font-inter text-gray-50"> {/* Adjusted size for mobile */}            {displayNumber ?? "X"}
           </div>
         </div>
-        <div>
+        <div className="mt-2 md:mt-0"> {/* Adjusted margin */}
           <h1 className="flex flex-col -mt-3 font-medium text-gray-300 text-md font-inter">
             Number Called:
           </h1>
-          <ul className={`flex flex-col w-full gap-2 p-1 mt-3 rounded-md ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-700'}`}>
+          <ul className={`flex flex-col w-full gap-1 p-1 mt-2 rounded-md md:gap-2 md:mt-3 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-700'}`}> {/* Adjusted gap and margin */}
             {columns.map(({ label, range }) => (
               <li key={label}>
                 <ul className="flex flex-row items-center justify-start gap-2">
@@ -174,7 +173,7 @@ function Player() {
                     .map((value, index) => (
                       <li
                         key={index}
-                        className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5`}
+                        className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5`} // Kept size consistent, seems okay
                         style={{ backgroundColor: theme.columnColors[label] }}
                       >
                         {value}
@@ -186,13 +185,13 @@ function Player() {
           </ul>
         </div>
       </div>
-      <div className="flex items-start justify-center w-full h-screen py-10 overflow-y-auto ">
+      <div className="flex items-start justify-center w-full p-4 md:h-screen md:py-10 md:overflow-y-auto "> {/* Added padding for mobile */}
         <div
           className={`${
             cards.length < 2
-              ? "flex justify-center  items-center "
-              : "grid grid-cols-2  place-items-center "
-          } w-fit h-fit gap-8 `}
+              ? "flex flex-col justify-center items-center " // Stack cards vertically if only one
+              : "grid grid-cols-1 md:grid-cols-2 place-items-center " // Stack on mobile, grid on medium+
+          } w-full md:w-fit h-fit gap-4 md:gap-8 `} // Use full width on mobile, adjust gap
         >
           {cards.map((value, index) => (
             <BingoCard
