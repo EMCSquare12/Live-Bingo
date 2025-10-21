@@ -17,7 +17,7 @@ const themes = {
   transparent: {
     color: 'rgba(31, 41, 55, 0.5)', // bg-gray-800 with opacity
     backgroundColor: '#1a1a1a',
-    backgroundImage: 'https://images.unsplash.com/photo-1553095066-5014bc7b7f2d?q=80&w=2787&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D',
+    backgroundImage: 'https://cdn.prod.website-files.com/6499e513de13a8a0d6f39fa1/64a7782df7c20fc7a34cdf84_Live%20logo%20-%20Horizontal.png',
     cardGridColor: 'rgba(255, 255, 255, 0.1)',
     columnColors: { B: '#3b82f6', I: '#ef4444', N: '#9ca3af', G: '#22c55e', O: '#eab308' },
     isTransparent: true,

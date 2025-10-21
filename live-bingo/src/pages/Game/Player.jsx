@@ -122,7 +122,7 @@ function Player() {
 
         {/* Player/Host/RoomCode Info */}
         <div className={`flex flex-row items-start justify-between w-full p-4 rounded-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
-           {/* ... Info content */}
+           {/* Left side */}
            <div className="flex gap-1 flex-col">
             <h1 className="font-medium text-gray-300 text-sm font-inter">
               Player: <span className="text-gray-50 font-bold">{player.name}</span>
@@ -131,7 +131,9 @@ function Player() {
               Host: <span className="text-gray-50 font-bold">{host.hostName}</span>
             </h1>
           </div>
-          <div className="flex gap-1 flex-col items-end">
+          {/* Right side */}
+          <div className="flex gap-1 flex-col items-start">
+            {/* Room Code */}
             <h1 className="flex flex-row items-center gap-2 font-medium text-gray-300 text-sm font-inter">
               Room Code:{" "}
               <button
@@ -147,7 +149,8 @@ function Player() {
                 )}
               </button>
             </h1>
-            <h1 className="font-medium text-gray-300 text-sm font-inter text-right">
+            {/* Card Number */}
+            <h1 className="font-medium text-gray-300 text-sm font-inter">
               Card Number: <span className="text-gray-50 font-bold">{host.cardNumber}</span>
             </h1>
           </div>
@@ -171,8 +174,16 @@ function Player() {
             </div>
           </div>
 
-          {/* Bingo Card(s) - Mobile View Container */}
-          <div className={`flex flex-col w-3/5 md:hidden overflow-y-auto max-h-60 hide-scrollbar ${cards.length === 1 ? 'justify-center items-center' : 'items-center justify-start pt-1'}`}>
+          {/* Bingo Card(s) - Mobile View Container - MODIFIED scroll classes */}
+          <div
+            className={`flex flex-col w-3/5 md:hidden
+              ${cards.length === 1
+                ? 'justify-center items-center' // Center if only 1 card
+                : 'items-center justify-start pt-1 overflow-y-auto max-h-60 hide-scrollbar' // Scroll if more than 1 card
+              }`
+            }
+          >
+            {/* Inner container for layout logic */}
             <div className={`flex flex-col w-fit h-fit gap-4`}>
                 {cards.map((value, index) => (
                 <BingoCard
@@ -185,31 +196,25 @@ function Player() {
                 ))}
             </div>
           </div>
-        </div>
+        </div> {/* End of Number/Card Row Container */}
 
-        {/* Number Called List - MODIFIED */}
-        <div className={`p-4 rounded-lg overflow-hidden ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}> {/* Added overflow-hidden */}
-          <h1 className="flex flex-col font-medium text-gray-300 text-md font-inter mb-2"> {/* Added mb-2 */}
+        {/* Number Called List */}
+        <div className={`p-4 rounded-lg overflow-hidden ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
+          <h1 className="flex flex-col font-medium text-gray-300 text-md font-inter mb-2">
             Number Called:
           </h1>
-          {/* Scrollable Container for the rows */}
-          <div className="overflow-x-auto pb-2"> {/* Added overflow-x-auto and pb-2 */}
-             {/* This inner div prevents wrapping and sets a min-width if needed */}
+          <div className="overflow-x-auto pb-2">
              <div className="inline-block min-w-full">
-                {/* Outer UL - Stacks B, I, N, G, O vertically */}
                 <ul className={`flex flex-col w-full gap-1 p-1 rounded-md md:gap-2`}>
                    {columns.map(({ label, range }) => (
-                    // Each LI represents a row (e.g., the 'B' row) - NOW FORCED NO WRAP
-                    <li key={label} className="flex flex-row items-center gap-2 flex-nowrap"> {/* MODIFIED: Added flex-nowrap */}
-                        {/* Letter Span */}
+                    <li key={label} className="flex flex-row items-center gap-2 flex-nowrap">
                         <span
                           className={`flex items-center justify-center text-2xl font-bold rounded-sm font-inter mr-2 w-6 flex-shrink-0`}
                           style={{ color: theme.columnColors[label] }}
                         >
                           {label}
                         </span>
-                        {/* Inner UL - Numbers for THIS letter */}
-                        <ul className="flex flex-row items-center flex-nowrap gap-2"> {/* MODIFIED: Removed overflow, Added flex-nowrap */}
+                        <ul className="flex flex-row items-center flex-nowrap gap-2">
                           {host.numberCalled
                             .filter((value) => value >= range[0] && value <= range[1])
                             .sort((a, b) => a - b)
