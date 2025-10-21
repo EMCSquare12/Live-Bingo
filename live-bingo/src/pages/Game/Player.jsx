@@ -27,7 +27,8 @@ function Player() {
   };
 
   const handleNumberClick = (num) => {
-    if (host.numberCalled?.includes(num)) {
+    // ... (handleNumberClick logic remains the same) ...
+     if (host.numberCalled?.includes(num)) {
       const newMarkedNumbers = markedNumbers.includes(num)
         ? markedNumbers.filter((n) => n !== num)
         : [...markedNumbers, num];
@@ -72,7 +73,8 @@ function Player() {
   ];
 
   const FaCopy = () => (
-    <svg
+    // ... (FaCopy SVG remains the same) ...
+     <svg
       xmlns="http://www.w3.org/2000/svg"
       className="w-4 h-4"
       fill="none"
@@ -89,7 +91,8 @@ function Player() {
   );
 
   const handleCopy = async () => {
-    try {
+    // ... (handleCopy logic remains the same) ...
+     try {
       await navigator.clipboard.writeText(roomCode);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -108,57 +111,97 @@ function Player() {
       : null;
 
   return (
-    <div
-      // Stack on mobile, grid on medium+ screens
-      className="flex flex-col w-full min-h-screen md:grid md:grid-cols-[40%_60%] items-start justify-start"
-    >
-      <div className={`flex flex-col w-full md:h-full gap-4 p-4 md:px-10 md:gap-6 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>        <div className="flex flex-row items-center justify-between w-full p-4 -mb-6">
+    <div className="flex flex-col w-full min-h-screen md:grid md:grid-cols-[40%_60%] items-stretch justify-start">
+
+      {/* Left Column (Desktop) / Main Content Area (Mobile) */}
+      <div className="flex flex-col w-full gap-4 p-4 md:h-full md:px-10 md:gap-6 md:order-1">
+
+        {/* Player/Host/RoomCode Info */}
+        <div className={`flex flex-row items-start justify-between w-full p-4 rounded-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
+           {/* ... (Info block content remains the same) ... */}
            <div className="flex gap-1 flex-col">
             <h1 className="font-medium text-gray-300 text-sm font-inter">
-            Player: <span className="text-gray-50 font-bold">{player.name}</span>
-          </h1>
-          <h1 className="font-medium text-gray-300 text-sm font-inter">
-            Host: <span className="text-gray-50 font-bold">{host.hostName}</span>
-          </h1>
+              Player: <span className="text-gray-50 font-bold">{player.name}</span>
+            </h1>
+            <h1 className="font-medium text-gray-300 text-sm font-inter">
+              Host: <span className="text-gray-50 font-bold">{host.hostName}</span>
+            </h1>
           </div>
-          <div className="flex gap-1 flex-col">
+          <div className="flex gap-1 flex-col items-end">
             <h1 className="flex flex-row items-center gap-2 font-medium text-gray-300 text-sm font-inter">
-            Room Code:{" "}
-            <button
-              onClick={handleCopy}
-              className="relative flex font-bold flex-row items-center gap-1 text-gray-50 hover:text-gray-300 "
-            >
-              {roomCode}
-              <FaCopy />
-              {copied && (
-                <span className="absolute left-0 p-1 text-xs text-gray-300 bg-gray-600 bg-opacity-50 rounded-md w-fit -bottom-6">
-                  Copied
-                </span>
-              )}
-            </button>
-          </h1>
-          <h1 className="font-medium text-gray-300 text-sm font-inter">Card Number: <span className="text-gray-50 font-bold">{host.cardNumber}</span></h1>
+              Room Code:{" "}
+              <button
+                onClick={handleCopy}
+                className="relative flex font-bold flex-row items-center gap-1 text-gray-50 hover:text-gray-300 "
+              >
+                {roomCode}
+                <FaCopy />
+                {copied && (
+                  <span className="absolute left-0 p-1 text-xs text-gray-300 bg-gray-600 bg-opacity-50 rounded-md w-fit -bottom-6">
+                    Copied
+                  </span>
+                )}
+              </button>
+            </h1>
+            <h1 className="font-medium text-gray-300 text-sm font-inter text-right">
+              Card Number: <span className="text-gray-50 font-bold">{host.cardNumber}</span>
+            </h1>
           </div>
         </div>
-        <div className="flex flex-row items-center justify-center gap-4 py-4 border-t border-b border-gray-500 md:gap-6 md:py-5"> {/* Adjusted gap and padding */}
-          {col && (
-            <div
-              className={`flex items-center justify-center font-bold text-4xl md:text-7xl rounded-lg text-gray-50 w-16 h-16 md:w-24 md:h-24 font-inter`} // Adjusted size for mobile
-              style={{ backgroundColor: theme.columnColors[col.label] }}
-            >
-              {col.label}
-            </div>
-          )}
 
-          <div className="w-fit text-center font-medium text-7xl md:text-9xl font-inter text-gray-50"> {/* Adjusted size for mobile */}            {displayNumber ?? "X"}
+        {/* Container for Number Display and Card(s) on Mobile */}
+        {/* items-center helps vertically align if heights differ slightly */}
+        <div className="flex flex-row items-center gap-4 md:flex-col md:items-start md:gap-6"> {/* Changed items-start to items-center for mobile row */}
+
+          {/* Called Number Display */}
+          {/* Added w-1/2 for mobile width, md:w-full to reset for larger */}
+          {/* Adjusted padding/size */}
+          <div className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg w-1/2 md:w-full md:flex-row md:py-5 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
+            {col && (
+              <div
+                className={`flex items-center justify-center font-bold text-3xl md:text-7xl rounded-lg text-gray-50 w-12 h-12 md:w-24 md:h-24 font-inter`} // Mobile letter size
+                style={{ backgroundColor: theme.columnColors[col.label] }}
+              >
+                {col.label}
+              </div>
+            )}
+            <div className="w-fit text-center font-medium text-7xl md:text-9xl font-inter text-gray-50"> {/* text-7xl mobile */}
+              {displayNumber ?? "X"}
+            </div>
           </div>
-        </div>
-        <div className="mt-2 md:mt-0"> {/* Adjusted margin */}
-          <h1 className="flex flex-col -mt-3 font-medium text-gray-300 text-md font-inter">
+
+          {/* Bingo Card(s) - Mobile View Container */}
+          {/* Added w-1/2 for mobile width */}
+          {/* md:hidden makes it appear only on mobile */}
+          <div className="flex flex-col items-center justify-start w-1/2 md:hidden"> {/* Added w-1/2 */}
+             <div
+                className={`${
+                cards.length < 2
+                    ? "flex flex-col justify-center items-center "
+                    : "grid grid-cols-1 " // Still stack multiple cards vertically
+                } w-full h-fit gap-4 `} // w-full within its half
+            >
+                {cards.map((value, index) => (
+                <BingoCard
+                    key={index}
+                    letterNumber={value}
+                    handleRefresh={() => handleRefresh(index)}
+                    markedNumbers={markedNumbers}
+                    handleNumberClick={handleNumberClick}
+                />
+                ))}
+            </div>
+          </div>
+        </div> {/* End of Number/Card Row Container */}
+
+        {/* Number Called List */}
+        <div className={`p-4 rounded-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
+          <h1 className="flex flex-col font-medium text-gray-300 text-md font-inter">
             Number Called:
           </h1>
-          <ul className={`flex flex-col w-full gap-1 p-1 mt-2 rounded-md md:gap-2 md:mt-3 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-700'}`}> {/* Adjusted gap and margin */}
-            {columns.map(({ label, range }) => (
+          <ul className={`flex flex-col w-full gap-1 p-1 mt-2 rounded-md md:gap-2 md:mt-3`}>
+             {/* ... (List content remains the same) ... */}
+             {columns.map(({ label, range }) => (
               <li key={label}>
                 <ul className="flex flex-row items-center justify-start gap-2">
                   <span
@@ -173,7 +216,7 @@ function Player() {
                     .map((value, index) => (
                       <li
                         key={index}
-                        className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5`} // Kept size consistent, seems okay
+                        className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5`}
                         style={{ backgroundColor: theme.columnColors[label] }}
                       >
                         {value}
@@ -184,14 +227,16 @@ function Player() {
             ))}
           </ul>
         </div>
-      </div>
-      <div className="flex items-start justify-center w-full p-4 md:h-screen md:py-10 md:overflow-y-auto "> {/* Added padding for mobile */}
+      </div> {/* End Left Column / Mobile Content Area */}
+
+      {/* Right Column (Desktop) / Bingo Card(s) */}
+      <div className="hidden md:flex items-start justify-center w-full p-4 md:h-screen md:py-10 md:overflow-y-auto md:order-2">
         <div
           className={`${
             cards.length < 2
-              ? "flex flex-col justify-center items-center " // Stack cards vertically if only one
-              : "grid grid-cols-1 md:grid-cols-2 place-items-center " // Stack on mobile, grid on medium+
-          } w-full md:w-fit h-fit gap-4 md:gap-8 `} // Use full width on mobile, adjust gap
+              ? "flex flex-col justify-center items-center "
+              : "grid grid-cols-1 md:grid-cols-2 place-items-center "
+          } w-full md:w-fit h-fit gap-4 md:gap-8 `}
         >
           {cards.map((value, index) => (
             <BingoCard
@@ -204,6 +249,7 @@ function Player() {
           ))}
         </div>
       </div>
+
     </div>
   );
 }
