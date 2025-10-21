@@ -1,3 +1,4 @@
+// src/pages/Game/Player.jsx
 import { useContext, useState, useEffect } from "react";
 import BingoCard from "../../components/BingoCard";
 import GameContext from "../../context/GameContext";
@@ -27,8 +28,7 @@ function Player() {
   };
 
   const handleNumberClick = (num) => {
-    // ... (handleNumberClick logic remains the same) ...
-     if (host.numberCalled?.includes(num)) {
+    if (host.numberCalled?.includes(num)) {
       const newMarkedNumbers = markedNumbers.includes(num)
         ? markedNumbers.filter((n) => n !== num)
         : [...markedNumbers, num];
@@ -37,7 +37,11 @@ function Player() {
 
       // Optimistic win check
       const winningPatternIndices = host.cardWinningPattern.index;
+      let alreadyWon = false;
+
       for (const card of player.cards) {
+        if (alreadyWon) break;
+
         const cardNumbers = [
           ...card.B,
           ...card.I,
@@ -57,12 +61,13 @@ function Player() {
           if (isWinner) {
             setShowConfetti(true);
             setWinMessage("BINGO! You are the winner!");
-            break;
+            alreadyWon = true;
           }
         }
       }
     }
   };
+
 
   const columns = [
     { label: "B", range: [1, 15] },
@@ -73,7 +78,6 @@ function Player() {
   ];
 
   const FaCopy = () => (
-    // ... (FaCopy SVG remains the same) ...
      <svg
       xmlns="http://www.w3.org/2000/svg"
       className="w-4 h-4"
@@ -91,7 +95,6 @@ function Player() {
   );
 
   const handleCopy = async () => {
-    // ... (handleCopy logic remains the same) ...
      try {
       await navigator.clipboard.writeText(roomCode);
       setCopied(true);
@@ -111,6 +114,7 @@ function Player() {
       : null;
 
   return (
+    // Main container
     <div className="flex flex-col w-full min-h-screen md:grid md:grid-cols-[40%_60%] items-stretch justify-start">
 
       {/* Left Column (Desktop) / Main Content Area (Mobile) */}
@@ -118,7 +122,7 @@ function Player() {
 
         {/* Player/Host/RoomCode Info */}
         <div className={`flex flex-row items-start justify-between w-full p-4 rounded-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
-           {/* ... (Info block content remains the same) ... */}
+           {/* ... Info content */}
            <div className="flex gap-1 flex-col">
             <h1 className="font-medium text-gray-300 text-sm font-inter">
               Player: <span className="text-gray-50 font-bold">{player.name}</span>
@@ -150,37 +154,26 @@ function Player() {
         </div>
 
         {/* Container for Number Display and Card(s) on Mobile */}
-        {/* items-center helps vertically align if heights differ slightly */}
-        <div className="flex flex-row items-center gap-4 md:flex-col md:items-start md:gap-6"> {/* Changed items-start to items-center for mobile row */}
-
+        <div className="flex flex-row items-stretch gap-4 md:flex-col md:items-start md:gap-6">
           {/* Called Number Display */}
-          {/* Added w-1/2 for mobile width, md:w-full to reset for larger */}
-          {/* Adjusted padding/size */}
-          <div className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg w-1/2 md:w-full md:flex-row md:py-5 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
-            {col && (
+          <div className={`flex flex-col items-center justify-center gap-2 p-4 rounded-lg w-2/5 md:w-full md:flex-row md:py-5 ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
+             {/* ... Number Display content */}
+             {col && (
               <div
-                className={`flex items-center justify-center font-bold text-3xl md:text-7xl rounded-lg text-gray-50 w-12 h-12 md:w-24 md:h-24 font-inter`} // Mobile letter size
+                className={`flex items-center justify-center font-bold text-3xl md:text-7xl rounded-lg text-gray-50 w-12 h-12 md:w-24 md:h-24 font-inter`}
                 style={{ backgroundColor: theme.columnColors[col.label] }}
               >
                 {col.label}
               </div>
             )}
-            <div className="w-fit text-center font-medium text-7xl md:text-9xl font-inter text-gray-50"> {/* text-7xl mobile */}
+            <div className="w-fit text-center font-medium text-7xl md:text-9xl font-inter text-gray-50">
               {displayNumber ?? "X"}
             </div>
           </div>
 
           {/* Bingo Card(s) - Mobile View Container */}
-          {/* Added w-1/2 for mobile width */}
-          {/* md:hidden makes it appear only on mobile */}
-          <div className="flex flex-col items-center justify-start w-1/2 md:hidden"> {/* Added w-1/2 */}
-             <div
-                className={`${
-                cards.length < 2
-                    ? "flex flex-col justify-center items-center "
-                    : "grid grid-cols-1 " // Still stack multiple cards vertically
-                } w-full h-fit gap-4 `} // w-full within its half
-            >
+          <div className={`flex flex-col w-3/5 md:hidden overflow-y-auto max-h-60 hide-scrollbar ${cards.length === 1 ? 'justify-center items-center' : 'items-center justify-start pt-1'}`}>
+            <div className={`flex flex-col w-fit h-fit gap-4`}>
                 {cards.map((value, index) => (
                 <BingoCard
                     key={index}
@@ -192,46 +185,56 @@ function Player() {
                 ))}
             </div>
           </div>
-        </div> {/* End of Number/Card Row Container */}
+        </div>
 
-        {/* Number Called List */}
-        <div className={`p-4 rounded-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}>
-          <h1 className="flex flex-col font-medium text-gray-300 text-md font-inter">
+        {/* Number Called List - MODIFIED */}
+        <div className={`p-4 rounded-lg overflow-hidden ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-800'}`}> {/* Added overflow-hidden */}
+          <h1 className="flex flex-col font-medium text-gray-300 text-md font-inter mb-2"> {/* Added mb-2 */}
             Number Called:
           </h1>
-          <ul className={`flex flex-col w-full gap-1 p-1 mt-2 rounded-md md:gap-2 md:mt-3`}>
-             {/* ... (List content remains the same) ... */}
-             {columns.map(({ label, range }) => (
-              <li key={label}>
-                <ul className="flex flex-row items-center justify-start gap-2">
-                  <span
-                    className={`flex items-center justify-center text-2xl font-bold rounded-sm font-inter mr-4 w-6`}
-                    style={{ color: theme.columnColors[label] }}
-                  >
-                    {label}
-                  </span>
-                  {host.numberCalled
-                    .filter((value) => value >= range[0] && value <= range[1])
-                    .sort((a, b) => a - b)
-                    .map((value, index) => (
-                      <li
-                        key={index}
-                        className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5`}
-                        style={{ backgroundColor: theme.columnColors[label] }}
-                      >
-                        {value}
-                      </li>
-                    ))}
+          {/* Scrollable Container for the rows */}
+          <div className="overflow-x-auto pb-2"> {/* Added overflow-x-auto and pb-2 */}
+             {/* This inner div prevents wrapping and sets a min-width if needed */}
+             <div className="inline-block min-w-full">
+                {/* Outer UL - Stacks B, I, N, G, O vertically */}
+                <ul className={`flex flex-col w-full gap-1 p-1 rounded-md md:gap-2`}>
+                   {columns.map(({ label, range }) => (
+                    // Each LI represents a row (e.g., the 'B' row) - NOW FORCED NO WRAP
+                    <li key={label} className="flex flex-row items-center gap-2 flex-nowrap"> {/* MODIFIED: Added flex-nowrap */}
+                        {/* Letter Span */}
+                        <span
+                          className={`flex items-center justify-center text-2xl font-bold rounded-sm font-inter mr-2 w-6 flex-shrink-0`}
+                          style={{ color: theme.columnColors[label] }}
+                        >
+                          {label}
+                        </span>
+                        {/* Inner UL - Numbers for THIS letter */}
+                        <ul className="flex flex-row items-center flex-nowrap gap-2"> {/* MODIFIED: Removed overflow, Added flex-nowrap */}
+                          {host.numberCalled
+                            .filter((value) => value >= range[0] && value <= range[1])
+                            .sort((a, b) => a - b)
+                            .map((value, index) => (
+                              <li
+                                key={index}
+                                className={`flex items-center justify-center text-xs font-medium text-center text-gray-50 rounded-sm w-5 h-5 flex-shrink-0`}
+                                style={{ backgroundColor: theme.columnColors[label] }}
+                              >
+                                {value}
+                              </li>
+                            ))}
+                        </ul>
+                    </li>
+                  ))}
                 </ul>
-              </li>
-            ))}
-          </ul>
+             </div>
+          </div>
         </div>
       </div> {/* End Left Column / Mobile Content Area */}
 
       {/* Right Column (Desktop) / Bingo Card(s) */}
       <div className="hidden md:flex items-start justify-center w-full p-4 md:h-screen md:py-10 md:overflow-y-auto md:order-2">
-        <div
+         {/* ... Desktop Card Layout content */}
+         <div
           className={`${
             cards.length < 2
               ? "flex flex-col justify-center items-center "
