@@ -74,7 +74,8 @@ const WinningPatternModal = () => {
   }, [isOpenModal, handleConfirm]);
 
   return (
-    <div className="fixed top-0 left-0 z-20 flex items-center justify-center w-screen h-screen bg-opacity-25 bg-gray-50">
+    // UPDATED: Increased z-index from z-20 to z-50
+    <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-screen h-screen bg-opacity-25 bg-gray-50">
       <div className={`flex flex-col gap-4 p-6 rounded-lg shadow-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-50'}`}>
         <div className="flex flex-col gap-1 rounded-md">
           <input

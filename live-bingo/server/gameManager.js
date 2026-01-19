@@ -224,7 +224,7 @@ function handleDisconnect(io, socket) {
         if (games[roomCode] && !games[roomCode].hostConnected) {
           endGame(io, roomCode);
         }
-      }, 30000);
+      }, 3600000); // UPDATED: 1 hour timeout (60 * 60 * 1000)
       break;
     }
 
@@ -238,7 +238,7 @@ function handleDisconnect(io, socket) {
           game.players.splice(playerIndex, 1);
           io.to(roomCode).emit("players", game.players);
         }
-      }, 30000);
+      }, 3600000); // UPDATED: 1 hour timeout (60 * 60 * 1000)
       break;
     }
   }

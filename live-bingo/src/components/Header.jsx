@@ -1,3 +1,4 @@
+// ... existing imports
 import Logo from "./Logo.jsx"; //
 import { useNavigate } from "react-router-dom"; //
 import { useContext, useState, useRef, useEffect } from "react"; //
@@ -5,8 +6,7 @@ import WinningPatternCard from "./WinningPatternCard.jsx"; //
 import GameContext from "../context/GameContext.js"; //
 import { socket } from "../utils/socket.js"; //
 
-// SVG Icon Components (MdVolumeUp, MdVolumeOff, FaCaretUp, FaCaretDown, HiMenu, HiX - Assuming defined as before)
-// ... (Keep the SVG component definitions from the previous code) ...
+// ... SVG Components (MdVolumeUp, MdVolumeOff, FaCaretUp, FaCaretDown, HiMenu, HiX) remain exactly the same ...
 const MdVolumeUp = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -127,7 +127,6 @@ function Header() {
   } = useContext(GameContext); //
 
   // useEffect for closing dropdowns/menus remains the same
-  // ... (Keep existing useEffect hook) ...
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Close pattern dropdown
@@ -154,7 +153,6 @@ function Header() {
 
 
   // Handler functions (handleNewGameClick, handleLeaveGameClick) remain the same
-  // ... (Keep existing handler functions) ...
   const handleNewGameClick = () => {
     setConfirmation({
       isOpen: true,
@@ -203,8 +201,8 @@ function Header() {
     });
   }; //
 
-
-  const isGameStarted = host.numberCalled && host.numberCalled.length > 1; //
+  // UPDATED: Check if any actual number has been called (ignoring the initial null)
+  const isGameStarted = host.numberCalled && host.numberCalled.some(num => num !== null);
 
   return (
     <>
