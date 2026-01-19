@@ -74,9 +74,8 @@ const WinningPatternModal = () => {
   }, [isOpenModal, handleConfirm]);
 
   return (
-    // CHANGED: Increased z-index from z-20 to z-50 to appear above the Header
-    <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-screen h-screen bg-opacity-25 bg-gray-50">
-      <div className={`flex flex-col gap-4 p-6 rounded-lg shadow-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-50'}`}>
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className={`flex flex-col gap-4 p-6 rounded-lg shadow-2xl ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-50'}`}>
         <div className="flex flex-col gap-1 rounded-md">
           <input
             value={host.cardWinningPattern.name}

@@ -97,7 +97,7 @@ function endGame(io, roomCode) {
         }
 
         delete games[roomCode];
-        console.log(`🧹 Room ${roomCode} has been closed and removed.`);
+        console.log(`Room ${roomCode} has been closed and removed.`);
     }
 }
 
@@ -224,7 +224,7 @@ function handleDisconnect(io, socket) {
         if (games[roomCode] && !games[roomCode].hostConnected) {
           endGame(io, roomCode);
         }
-      }, 3600000); // CHANGED: 1 hour timeout
+      }, 3600000);
       break;
     }
 
@@ -238,7 +238,7 @@ function handleDisconnect(io, socket) {
           game.players.splice(playerIndex, 1);
           io.to(roomCode).emit("players", game.players);
         }
-      }, 3600000); // CHANGED: 1 hour timeout
+      }, 3600000);
       break;
     }
   }

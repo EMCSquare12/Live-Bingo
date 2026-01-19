@@ -6,7 +6,7 @@ import WinningPatternCard from "./WinningPatternCard.jsx";
 import GameContext from "../context/GameContext.js";
 import { socket } from "../utils/socket.js";
 
-// ... (SVG components remain the same) ...
+// ... (SVG components MdVolumeUp, MdVolumeOff, FaCaretUp, FaCaretDown, HiMenu, HiX remain unchanged) ...
 const MdVolumeUp = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -127,12 +127,9 @@ function Header() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // Close pattern dropdown
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsClicked(false);
       }
-
-      // Close mobile menu
       if (
         mobileMenuRef.current &&
         !mobileMenuRef.current.contains(event.target) &&
@@ -195,7 +192,6 @@ function Header() {
     });
   };
 
-  // CHANGED: Improved check to see if any actual number (not null) is called
   const isGameStarted = host.numberCalled && host.numberCalled.some(num => num !== null);
 
   return (
