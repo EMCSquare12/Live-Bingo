@@ -2,7 +2,7 @@
 import { useContext, useEffect, useState } from "react";
 import GameContext from "../../context/GameContext";
 import { GiRoundStar } from "react-icons/gi";
-import { socket } from "../../utils/socket"; // Correctly imported
+import { socket } from "../../utils/socket";
 
 const WinningPatternModal = () => {
   const { isOpenModal, setIsOpenModal, host, setHost, theme, roomCode } =
@@ -74,7 +74,7 @@ const WinningPatternModal = () => {
   }, [isOpenModal, handleConfirm]);
 
   return (
-    // UPDATED: Increased z-index from z-20 to z-50
+    // CHANGED: Increased z-index from z-20 to z-50 to appear above the Header
     <div className="fixed top-0 left-0 z-50 flex items-center justify-center w-screen h-screen bg-opacity-25 bg-gray-50">
       <div className={`flex flex-col gap-4 p-6 rounded-lg shadow-lg ${theme.isTransparent ? 'glass-morphism' : 'bg-gray-50'}`}>
         <div className="flex flex-col gap-1 rounded-md">

@@ -1,12 +1,12 @@
-// ... existing imports
-import Logo from "./Logo.jsx"; //
-import { useNavigate } from "react-router-dom"; //
-import { useContext, useState, useRef, useEffect } from "react"; //
-import WinningPatternCard from "./WinningPatternCard.jsx"; //
-import GameContext from "../context/GameContext.js"; //
-import { socket } from "../utils/socket.js"; //
+// src/components/Header.jsx
+import Logo from "./Logo.jsx";
+import { useNavigate } from "react-router-dom";
+import { useContext, useState, useRef, useEffect } from "react";
+import WinningPatternCard from "./WinningPatternCard.jsx";
+import GameContext from "../context/GameContext.js";
+import { socket } from "../utils/socket.js";
 
-// ... SVG Components (MdVolumeUp, MdVolumeOff, FaCaretUp, FaCaretDown, HiMenu, HiX) remain exactly the same ...
+// ... (SVG components remain the same) ...
 const MdVolumeUp = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -22,7 +22,7 @@ const MdVolumeUp = () => (
       d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
     />
   </svg>
-); //
+);
 
 const MdVolumeOff = () => (
   <svg
@@ -45,7 +45,7 @@ const MdVolumeOff = () => (
       d="M17 14l2-2m0 0l2-2m-2 2L17 10"
     />
   </svg>
-); //
+);
 
 const FaCaretUp = () => (
   <svg
@@ -58,7 +58,7 @@ const FaCaretUp = () => (
   >
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
   </svg>
-); //
+);
 
 const FaCaretDown = () => (
   <svg
@@ -71,12 +71,12 @@ const FaCaretDown = () => (
   >
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
   </svg>
-); //
+);
 
 const HiMenu = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    className="w-6 h-6" // Increased size slightly
+    className="w-6 h-6"
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -88,12 +88,12 @@ const HiMenu = () => (
       d="M4 6h16M4 12h16m-7 6h7"
     />
   </svg>
-); //
+);
 
 const HiX = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
-    className="w-6 h-6" // Increased size slightly
+    className="w-6 h-6"
     fill="none"
     viewBox="0 0 24 24"
     stroke="currentColor"
@@ -105,16 +105,15 @@ const HiX = () => (
       d="M6 18L18 6M6 6l12 12"
     />
   </svg>
-); //
-
+);
 
 function Header() {
-  const navigate = useNavigate(); //
-  const [isClickSound, setIsClickSound] = useState(false); //
-  const [isClicked, setIsClicked] = useState(false); //
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); //
-  const dropdownRef = useRef(null); //
-  const mobileMenuRef = useRef(null); //
+  const navigate = useNavigate();
+  const [isClickSound, setIsClickSound] = useState(false);
+  const [isClicked, setIsClicked] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const dropdownRef = useRef(null);
+  const mobileMenuRef = useRef(null);
 
   const {
     setIsOpenModal,
@@ -124,35 +123,31 @@ function Header() {
     roomCode,
     setConfirmation,
     theme,
-  } = useContext(GameContext); //
+  } = useContext(GameContext);
 
-  // useEffect for closing dropdowns/menus remains the same
   useEffect(() => {
     const handleClickOutside = (event) => {
       // Close pattern dropdown
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsClicked(false);
-      } //
+      }
 
-      // NEW: Close mobile menu
-      // Check if the click is outside the mobile menu AND not on the toggle button
+      // Close mobile menu
       if (
         mobileMenuRef.current &&
         !mobileMenuRef.current.contains(event.target) &&
         !event.target.closest("button[data-testid='mobile-menu-button']")
       ) {
         setIsMobileMenuOpen(false);
-      } //
+      }
     };
 
-    document.addEventListener("mousedown", handleClickOutside); //
+    document.addEventListener("mousedown", handleClickOutside);
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside); //
+      document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []); //
+  }, []);
 
-
-  // Handler functions (handleNewGameClick, handleLeaveGameClick) remain the same
   const handleNewGameClick = () => {
     setConfirmation({
       isOpen: true,
@@ -160,88 +155,84 @@ function Header() {
         "Are you sure you want to start a new game? This will reset the current board.",
       onConfirm: () => {
         if (roomCode) {
-          socket.emit("new-game", roomCode); //
+          socket.emit("new-game", roomCode);
         }
-        setConfirmation({ isOpen: false }); //
+        setConfirmation({ isOpen: false });
       },
       onCancel: () => {
-        setConfirmation({ isOpen: false }); //
+        setConfirmation({ isOpen: false });
       },
     });
-  }; //
+  };
 
   const handleLeaveGameClick = () => {
     setConfirmation({
       isOpen: true,
-      message: "Are you sure you want to leave the game?", //
+      message: "Are you sure you want to leave the game?",
       onConfirm: () => {
-        if (!host.isHost) { //
+        if (!host.isHost) {
           const timeout = setTimeout(() => {
-            resetGame(); //
-            navigate("/"); //
-          }, 5000); //
+            resetGame();
+            navigate("/");
+          }, 5000);
 
           socket.once("leave-acknowledged", () => {
-            clearTimeout(timeout); //
-            resetGame(); //
-            navigate("/"); //
-          }); //
-          socket.emit("leave-game"); //
+            clearTimeout(timeout);
+            resetGame();
+            navigate("/");
+          });
+          socket.emit("leave-game");
         } else {
-          // Immediately reset the game state and navigate for the host
-          resetGame(); //
-          navigate("/"); //
-          socket.emit("host-leave", roomCode); //
+          resetGame();
+          navigate("/");
+          socket.emit("host-leave", roomCode);
         }
-        setConfirmation({ isOpen: false }); //
+        setConfirmation({ isOpen: false });
       },
       onCancel: () => {
-        setConfirmation({ isOpen: false }); //
+        setConfirmation({ isOpen: false });
       },
     });
-  }; //
+  };
 
-  // UPDATED: Check if any actual number has been called (ignoring the initial null)
+  // CHANGED: Improved check to see if any actual number (not null) is called
   const isGameStarted = host.numberCalled && host.numberCalled.some(num => num !== null);
 
   return (
     <>
-      {/* MODIFIED: Increased padding (py-4 px-4) and added gap-4 */}
       <div
-        className={`relative z-20 flex items-center justify-between w-screen px-4 py-4 border-b border-gray-900 h-fit md:px-8 gap-4 ${ // Increased padding, added gap
+        className={`relative z-20 flex items-center justify-between w-screen px-4 py-4 border-b border-gray-900 h-fit md:px-8 gap-4 ${
           theme.isTransparent ? "glass-morphism" : "bg-gray-800"
         }`}
       >
-        {/* MODIFIED: Ensure logo doesn't shrink */}
         <div className="flex-shrink-0">
           <Logo />
         </div>
 
-        {/* MODIFIED: Wrapped Winning Pattern in a div for potential centering/spacing, hidden on small screens */}
         <div className="relative z-10 hidden md:flex items-center justify-center flex-grow gap-2 px-3 font-medium text-gray-300 text-md font-inter">
           Winning Pattern:{" "}
           <span
             onClick={() => setIsClicked(!isClicked)}
-            className="flex items-center h-full gap-1 p-2 rounded cursor-pointer hover:bg-gray-700" // Added rounded
+            className="flex items-center h-full gap-1 p-2 rounded cursor-pointer hover:bg-gray-700"
           >
-            {host.cardWinningPattern.name || "Customize"} {/* */}
-            {isClicked ? <FaCaretUp /> : <FaCaretDown />} {/* */}
+            {host.cardWinningPattern.name || "Customize"}
+            {isClicked ? <FaCaretUp /> : <FaCaretDown />}
           </span>
-          {isClicked && !isOpenModal ? ( //
+          {isClicked && !isOpenModal ? (
             <div
-              ref={dropdownRef} //
+              ref={dropdownRef}
               className={`absolute z-10 flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full w-60 ${
                 theme.isTransparent ? "glass-morphism" : "bg-gray-50"
               }`}
             >
-              <WinningPatternCard /> {/* */}
-              {host.isHost && ( //
+              <WinningPatternCard />
+              {host.isHost && (
                 <button
                   onClick={() => {
-                    setIsOpenModal(true); //
-                    setIsClicked(false); //
+                    setIsOpenModal(true);
+                    setIsClicked(false);
                   }}
-                  disabled={isGameStarted} //
+                  disabled={isGameStarted}
                   className="mt-2 text-blue-600 underline text-md font-inter hover:text-blue-700 disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
                 >
                   Change
@@ -251,48 +242,42 @@ function Header() {
           ) : null}
         </div>
 
-        {/* MODIFIED: Right-side buttons group - increased gap */}
-        <div className="flex items-center flex-shrink-0 gap-2 md:gap-3"> {/* Increased gap */}
-          {/* Sound Button remains visually okay */}
+        <div className="flex items-center flex-shrink-0 gap-2 md:gap-3">
           <button
-            onClick={() => setIsClickSound(!isClickSound)} //
-            className="hidden sm:flex items-center justify-center gap-1 p-2 font-medium text-gray-400 rounded-md text-md font-inter hover:text-gray-100 hover:bg-gray-700" // Hidden on xs, padding adjusted
+            onClick={() => setIsClickSound(!isClickSound)}
+            className="hidden sm:flex items-center justify-center gap-1 p-2 font-medium text-gray-400 rounded-md text-md font-inter hover:text-gray-100 hover:bg-gray-700"
           >
             {isClickSound ? <MdVolumeOff /> : <MdVolumeUp />} 
           </button>
 
-          {host.isHost && ( //
+          {host.isHost && (
             <button
-              onClick={handleNewGameClick} //
-              className="px-4 py-2 text-sm font-medium text-gray-100 bg-blue-600 rounded-md md:text-md font-inter hover:bg-blue-700" // Adjusted padding/size
+              onClick={handleNewGameClick}
+              className="px-4 py-2 text-sm font-medium text-gray-100 bg-blue-600 rounded-md md:text-md font-inter hover:bg-blue-700"
             >
               New game
             </button>
           )}
 
-          {/* Leave Game button (Desktop) */}
           <button
-            onClick={handleLeaveGameClick} //
-            className="hidden px-4 py-2 text-sm font-medium text-gray-400 md:block md:text-md font-inter hover:rounded-md hover:bg-gray-700 hover:text-gray-100" // Adjusted padding/size
+            onClick={handleLeaveGameClick}
+            className="hidden px-4 py-2 text-sm font-medium text-gray-400 md:block md:text-md font-inter hover:rounded-md hover:bg-gray-700 hover:text-gray-100"
           >
             Leave game
           </button>
 
-          {/* Hamburger Menu (Mobile) */}
           <div className="relative md:hidden">
-             {/* MODIFIED: Increased padding */}
             <button
-              data-testid="mobile-menu-button" //
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} //
-              className="p-2 text-gray-400 rounded-md hover:text-gray-100 hover:bg-gray-700" // Padding ensures larger tap target
+              data-testid="mobile-menu-button"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="p-2 text-gray-400 rounded-md hover:text-gray-100 hover:bg-gray-700"
             >
-              {isMobileMenuOpen ? <HiX /> : <HiMenu />} {/* */}
+              {isMobileMenuOpen ? <HiX /> : <HiMenu />}
             </button>
 
-            {/* Mobile Menu Dropdown */}
-            {isMobileMenuOpen && ( //
+            {isMobileMenuOpen && (
               <div
-                ref={mobileMenuRef} //
+                ref={mobileMenuRef}
                 className={`absolute right-0 z-20 w-48 mt-2 origin-top-right rounded-md shadow-lg ${
                   theme.isTransparent ? "glass-morphism" : "bg-gray-800"
                 }`}
@@ -303,35 +288,21 @@ function Header() {
                   aria-orientation="vertical"
                   aria-labelledby="mobile-menu-button"
                 >
-                   {/* NEW: Sound button inside mobile menu */}
-                   {/* <button
-                    onClick={() => {
-                        setIsClickSound(!isClickSound);
-                        setIsMobileMenuOpen(false); // Close menu on click
-                    }}
-                    className="flex items-center w-full gap-2 px-4 py-2 text-left text-gray-300 text-md font-inter hover:bg-gray-700 hover:text-gray-100" // Added flex, gap
-                    role="menuitem"
-                  >
-                    {isClickSound ? <MdVolumeOff /> : <MdVolumeUp />} 
-                    <span>{isClickSound ? 'Mute' : 'Unmute'}</span>
-                  </button> */}
-
-                   {/* NEW: Winning Pattern display/trigger inside mobile menu */}
                    <button
                      onClick={() => {
-                        setIsClicked(!isClicked); // Open pattern dropdown
-                        setIsMobileMenuOpen(false); // Close this menu
+                        setIsClicked(!isClicked);
+                        setIsMobileMenuOpen(false);
                      }}
                     className="block w-full px-4 py-2 text-left text-gray-300 text-md font-inter hover:bg-gray-700 hover:text-gray-100"
                     role="menuitem"
                   >
-                    Pattern: {host.cardWinningPattern.name || "Customize"} {/* */}
+                    Pattern: {host.cardWinningPattern.name || "Customize"}
                   </button>
 
                   <button
                     onClick={() => {
-                      handleLeaveGameClick(); //
-                      setIsMobileMenuOpen(false); //
+                      handleLeaveGameClick();
+                      setIsMobileMenuOpen(false);
                     }}
                     className="block w-full px-4 py-2 text-left text-gray-300 text-md font-inter hover:bg-gray-700 hover:text-gray-100"
                     role="menuitem"
@@ -344,31 +315,30 @@ function Header() {
           </div>
         </div>
       </div>
-       {/* NEW: Winning pattern display below header on small screens */}
       <div className="relative z-10 flex items-center justify-center py-2 border-b border-gray-700 md:hidden bg-gray-800/80 backdrop-blur-sm">
           <span className="font-medium text-gray-300 text-md font-inter">Winning Pattern:{" "}</span>
           <span
             onClick={() => setIsClicked(!isClicked)}
-            className="flex items-center h-full gap-1 p-2 ml-1 rounded cursor-pointer text-gray-50 hover:bg-gray-700" // Added rounded, text-gray-50
+            className="flex items-center h-full gap-1 p-2 ml-1 rounded cursor-pointer text-gray-50 hover:bg-gray-700"
           >
-            {host.cardWinningPattern.name || "Customize"} {/* */}
-            {isClicked ? <FaCaretUp /> : <FaCaretDown />} {/* */}
+            {host.cardWinningPattern.name || "Customize"}
+            {isClicked ? <FaCaretUp /> : <FaCaretDown />}
           </span>
-          {isClicked && !isOpenModal ? ( //
+          {isClicked && !isOpenModal ? (
             <div
-              ref={dropdownRef} //
-              className={`absolute z-20 flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full w-60 ${ // Increased z-index
+              ref={dropdownRef}
+              className={`absolute z-20 flex flex-col items-center justify-center p-4 transform -translate-x-1/2 rounded-md shadow-lg left-1/2 top-full w-60 ${
                 theme.isTransparent ? "glass-morphism" : "bg-gray-50"
               }`}
             >
-              <WinningPatternCard /> {/* */}
-              {host.isHost && ( //
+              <WinningPatternCard />
+              {host.isHost && (
                 <button
                   onClick={() => {
-                    setIsOpenModal(true); //
-                    setIsClicked(false); //
+                    setIsOpenModal(true);
+                    setIsClicked(false);
                   }}
-                  disabled={isGameStarted} //
+                  disabled={isGameStarted}
                   className="mt-2 text-blue-600 underline text-md font-inter hover:text-blue-700 disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
                 >
                   Change
