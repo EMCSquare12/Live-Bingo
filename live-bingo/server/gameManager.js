@@ -228,11 +228,12 @@ function handleDisconnect(io, socket) {
   for (const [roomCode, game] of Object.entries(games)) {
     if (game.hostSocketId === socket.id) {
       game.hostConnected = false;
+      // Change timeout to 24 hours (86400000 ms)
       game.disconnectTimeout = setTimeout(() => {
         if (games[roomCode] && !games[roomCode].hostConnected) {
           endGame(io, roomCode);
         }
-      }, 3600000);
+      }, 86400000); 
       break;
     }
 
@@ -241,12 +242,13 @@ function handleDisconnect(io, socket) {
       const player = game.players[playerIndex];
       player.connected = false;
       io.to(roomCode).emit("players", game.players);
+      // Change timeout to 24 hours (86400000 ms)
       player.disconnectTimeout = setTimeout(() => {
         if (games[roomCode] && !player.connected) {
           game.players.splice(playerIndex, 1);
           io.to(roomCode).emit("players", game.players);
         }
-      }, 3600000);
+      }, 86400000);
       break;
     }
   }

@@ -1,10 +1,11 @@
+// src/pages/Game/Host.jsx
 import { useContext, useEffect, useState } from "react";
 import GameContext from "../../context/GameContext";
 import { useLocation, Link } from "react-router-dom";
 import { socket } from "../../utils/socket";
+import WinningPatternModal from "../../components/modal/WinningPatternModal"; // Kept import if needed elsewhere, but removing usages
 
-// SVG Icon Components (FaCopy, FaTrophy, FaUsers, FaSearch, FaChevronDown, HiX - Assuming these are defined as before)
-// ... (Keep the SVG component definitions from the previous code) ...
+// ... (SVG components MdVolumeUp, MdVolumeOff, FaCaretUp, FaCaretDown, HiMenu, HiX remain unchanged) ...
 const FaCopy = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -104,7 +105,6 @@ function Host() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(false);
   const {
-    isOpenModal,
     host,
     setHost,
     bingoNumbers,
@@ -278,7 +278,6 @@ function Host() {
 
   return (
     <div className="flex flex-col items-center justify-start w-full min-h-screen relative">
-      {isOpenModal && <WinningPatternModal />}
       <div className="flex flex-wrap items-center justify-center w-full gap-x-6 gap-y-2 px-4 pt-5 md:justify-between md:px-10">
         <h1 className="py-1 font-medium text-gray-300 text-md md:text-sm font-inter w-fit whitespace-nowrap">
           Host:{" "}
