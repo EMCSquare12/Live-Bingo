@@ -1,9 +1,10 @@
 // src/context/GameProvider.jsx
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import GameContext from "./GameContext";
 import { socket } from "../utils/socket";
 
 const GameProvider = ({ children }) => {
+  // --- UI State ---
   const [roomCode, setRoomCode] = useState("");
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -12,72 +13,43 @@ const GameProvider = ({ children }) => {
   const [isNewGameModalVisible, setIsNewGameModalVisible] = useState(false);
   const [isHostLeftModalVisible, setIsHostLeftModalVisible] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [isShuffling, setIsShuffling] = useState(false);
+  const [displayNumber, setDisplayNumber] = useState(null);
+  
   const [confirmation, setConfirmation] = useState({
-    isOpen: false,
-    message: "",
-    onConfirm: () => {},
-    onCancel: () => {},
+    isOpen: false, message: "", onConfirm: () => {}, onCancel: () => {},
   });
- const [theme, setTheme] = useState({
+
+  const [theme, setTheme] = useState({
     name: 'default',
     color: '#374151',
     backgroundColor: '#111827',
     backgroundImage: '',
     cardGridColor: '#4b5563',
-    columnColors: {
-      B: '#3b82f6',
-      I: '#ef4444',
-      N: '#9ca3af',
-      G: '#22c55e',
-      O: '#eab308',
-    },
+    columnColors: { B: '#3b82f6', I: '#ef4444', N: '#9ca3af', G: '#22c55e', O: '#eab308' },
     isTransparent: false,
   });
-  const [isShuffling, setIsShuffling] = useState(false);
-  const [displayNumber, setDisplayNumber] = useState(null);
 
+  // --- Game State ---
   const initialBingoNumbers = {
-    array: [...Array(75)].map((_, i) => i + 1),
+    array: Array.from({ length: 75 }, (_, i) => i + 1),
     randomNumber: null,
   };
-  const initialPlayerState = { id: "", name: "", cards: [], result: [] };
-  const initialHostState = {
-    id: "",
-    isHost: false,
-    hostName: "",
-    cardNumber: 1,
-    numberCalled: [],
-    cardWinningPattern: { name: "", index: [] },
-    players: [],
-    winners: [],
-  };
-
+  
   const [bingoNumbers, setBingoNumbers] = useState(initialBingoNumbers);
-  const [player, setPlayer] = useState(initialPlayerState);
-  const [host, setHost] = useState(initialHostState);
+  const [player, setPlayer] = useState({ id: "", name: "", cards: [], result: [] });
+  const [host, setHost] = useState({
+    id: "", isHost: false, hostName: "", cardNumber: 1, 
+    numberCalled: [null], cardWinningPattern: { name: "", index: [] }, 
+    players: [], winners: []
+  });
 
-  useEffect(() => {
-    const handleThemeUpdate = (newTheme) => {
-      setTheme(newTheme);
-    };
-    socket.on("theme-updated", handleThemeUpdate);
-    return () => {
-      socket.off("theme-updated", handleThemeUpdate);
-    };
-  }, []);
+  // --- Actions ---
 
-  useEffect(() => {
-    if (showConfetti) {
-      const timer = setTimeout(() => {
-        setShowConfetti(false);
-      }, 10000);
-      return () => clearTimeout(timer);
-    }
-  }, [showConfetti]);
-
-  const resetGame = () => {
-    setHost(initialHostState);
-    setPlayer(initialPlayerState);
+  const resetGame = useCallback(() => {
+    console.log("Resetting Game State locally.");
+    setHost({ id: "", isHost: false, hostName: "", cardNumber: 1, numberCalled: [null], cardWinningPattern: { name: "", index: [] }, players: [], winners: [] });
+    setPlayer({ id: "", name: "", cards: [], result: [] });
     setBingoNumbers(initialBingoNumbers);
     setWinMessage("");
     setRoomCode("");
@@ -85,272 +57,199 @@ const GameProvider = ({ children }) => {
     setIsHostLeftModalVisible(false);
     setShowConfetti(false);
     localStorage.removeItem("bingo-session");
-    // Force a socket disconnect/reconnect to clear backend state mapping
-    socket.disconnect(); 
-    socket.connect();
-    console.log("Game state has been reset and socket reconnected.");
-  };
+    // Ensure socket clears subscriptions but stays open
+    socket.off(); 
+  }, []);
+
+  // --- Socket Event Handlers ---
 
   useEffect(() => {
-    // Defines the logic to restore session
-    const restoreSession = () => {
+    // 1. Session Restoration Logic
+    const attemptReconnect = () => {
       const session = JSON.parse(localStorage.getItem("bingo-session"));
-      if (session && session.roomCode) {
-        console.log("🔄 Attempting to restore session...", session);
+      if (session?.roomCode && session?.id) {
+        console.log("Found session, attempting reconnect...", session);
         setIsReconnecting(true);
-        socket.emit(
-          "reconnect-player",
-          session.roomCode,
-          session.id,
-          session.isHost
-        );
+        socket.emit("reconnect-player", session.roomCode, session.id, session.isHost);
       } else {
+        setIsLoading(false); // No session, ready to join/create
+      }
+    };
+
+    // 2. Define Handlers
+    const onSessionReconnected = (game) => {
+        console.log("Session Reconnected:", game);
+        const storedSession = JSON.parse(localStorage.getItem("bingo-session"));
+        
+        setRoomCode(game.roomCode);
+        setHost(prev => ({
+            ...prev,
+            id: game.hostId,
+            isHost: storedSession?.isHost || false,
+            hostName: game.hostName,
+            cardNumber: game.cardNumber,
+            cardWinningPattern: game.cardWinningPattern,
+            numberCalled: game.numberCalled,
+            players: game.players,
+            winners: game.winners
+        }));
+
+        if(game.theme) setTheme(game.theme);
+
+        // Calculate missing numbers
+        const calledSet = new Set(game.numberCalled);
+        const remaining = Array.from({length: 75}, (_, i) => i+1).filter(n => !calledSet.has(n));
+        const lastCall = game.numberCalled.length > 1 ? game.numberCalled[game.numberCalled.length - 1] : null;
+        
+        setBingoNumbers({ array: remaining, randomNumber: lastCall });
+        setDisplayNumber(lastCall);
+
+        if (storedSession && !storedSession.isHost) {
+            const me = game.players.find(p => p.id === storedSession.id);
+            if (me) setPlayer(me);
+        }
+
         setIsLoading(false);
-      }
+        setIsReconnecting(false);
     };
 
-    // Run immediately on mount
-    restoreSession();
-
-    // CRITICAL FIX: Re-run restoration whenever the socket connects/reconnects.
-    // This ensures the server always has the correct socket ID for the host/player.
-    const handleSocketConnect = () => {
-      console.log("✅ Socket connected/reconnected. Verifying session...");
-      restoreSession();
-    };
-
-    const handleSessionReconnect = (game) => {
-      const currentSession = JSON.parse(localStorage.getItem("bingo-session"));
-      setRoomCode(game.roomCode);
-      setHost({
-        id: game.hostId,
-        isHost: currentSession?.isHost || false,
-        hostName: game.hostName,
-        cardNumber: game.cardNumber,
-        cardWinningPattern: game.cardWinningPattern,
-        numberCalled: game.numberCalled,
-        players: game.players,
-        winners: game.winners,
-      });
-      if (game.theme) {
-        setTheme(game.theme);
-      }
-      const allNumbers = [...Array(75)].map((_, i) => i + 1);
-      const remainingNumbers = allNumbers.filter(
-        (num) => !game.numberCalled.includes(num)
-      );
-      const lastCalledNumber =
-        game.numberCalled.length > 0
-          ? game.numberCalled[game.numberCalled.length - 1]
-          : null;
-      setBingoNumbers({
-        array: remainingNumbers,
-        randomNumber: lastCalledNumber,
-      });
-      setDisplayNumber(lastCalledNumber);
-      if (currentSession && !currentSession.isHost) {
-        const currentPlayer = game.players.find(
-          (p) => p.id === currentSession.id
-        );
-        if (currentPlayer) {
-          setPlayer(currentPlayer);
-        }
-      }
-      setIsLoading(false);
-      setIsReconnecting(false);
-    };
-
-    const handleReconnectFailed = (message) => {
-      console.error("Reconnect failed:", message);
-      // Only stop loading if we aren't in a valid game state
-      if (!roomCode) {
+    const onReconnectFailed = (msg) => {
+        console.warn("Reconnect failed:", msg);
+        localStorage.removeItem("bingo-session"); // Clear bad session
         setIsLoading(false);
-      }
-      setIsReconnecting(false);
+        setIsReconnecting(false);
     };
 
-    const handleCardRefreshed = (newCards) => {
-      setPlayer((prev) => ({
-        ...prev,
-        cards: newCards,
-      }));
+    const onShuffling = (num) => {
+        setIsShuffling(true);
+        setDisplayNumber(num);
     };
 
-    const handlePlayersWon = (winners) => {
-      setHost((prev) => ({ ...prev, winners }));
-      const amIWinner = winners.some((winner) => winner.id === player.id);
-
-      if (amIWinner) {
-        setShowConfetti(true);
-        if (winners.length > 1) {
-          setWinMessage("BINGO! You and others have won!");
-        } else {
-          setWinMessage("BINGO! You are the winner!");
-        }
-      } else {
-        const winnerNames = winners.map((w) => w.name).join(", ");
-        if (winners.length > 1) {
-          setWinMessage(`${winnerNames} are the winners!`);
-        } else {
-          setWinMessage(`${winnerNames} wins the game!`);
-        }
-      }
+    const onNumberCalled = (fullList) => {
+        setIsShuffling(false);
+        const lastNum = fullList[fullList.length - 1];
+        setDisplayNumber(lastNum);
+        
+        setHost(prev => ({ ...prev, numberCalled: fullList }));
+        setBingoNumbers(prev => ({
+            randomNumber: lastNum,
+            array: prev.array.filter(n => n !== lastNum)
+        }));
     };
 
-    const handleGameReset = (game) => {
-      console.log("Client received game-reset event");
-      setShowConfetti(false);
-      setDisplayNumber(null); 
-      setBingoNumbers({
-        array: [...Array(75)].map((_, i) => i + 1),
-        randomNumber: null,
-      });
-      setWinMessage("");
-      setHost((prev) => ({
-        ...prev,
-        numberCalled: game.numberCalled,
-        winners: game.winners,
-        players: game.players,
-      }));
-      if (!host.isHost) {
-        setIsNewGameModalVisible(true);
-      }
+    const onPlayersUpdate = (players) => {
+        setHost(prev => ({ ...prev, players }));
+        // If I am a player, update my local state to match server (marks, etc)
+        // Check `player.id` from state closure or ref is tricky here, 
+        // relying on `player` dependency in a separate effect is better,
+        // BUT we need to ensure we don't overwrite optimistic updates incorrectly.
+        // For now, Host updates `players` list, individual `player` update handled by specific events or effect below.
     };
 
-    const handleShuffling = (num) => {
-      setIsShuffling(true);
-      setDisplayNumber(num);
-      
-      // FAILSAFE: Force stop shuffling after 3 seconds if server response is lost
-      setTimeout(() => {
-        setIsShuffling((current) => {
-            if(current === true) return false;
-            return current;
-        });
-      }, 3000);
+    const onPlayersWon = (winners) => {
+        setHost(prev => ({ ...prev, winners }));
+        // Logic for checking if 'I' won is handled in UI or derived state
+        const myId = JSON.parse(localStorage.getItem("bingo-session"))?.id;
+        const amIWinner = winners.some(w => w.id === myId);
+        
+        setShowConfetti(amIWinner);
+        const names = winners.map(w => w.name).join(", ");
+        setWinMessage(amIWinner ? (winners.length > 1 ? "BINGO! You and others won!" : "BINGO! You Won!") : `${names} Won!`);
     };
 
-    const handleNumberCalled = (numberCalledArray) => {
-      setIsShuffling(false);
-      const finalNumber = numberCalledArray.at(-1);
-
-      setDisplayNumber(finalNumber);
-
-      setHost((prev) => ({ ...prev, numberCalled: numberCalledArray }));
-
-      const allNumbers = [...Array(75)].map((_, i) => i + 1);
-      setBingoNumbers((prev) => ({
-        ...prev,
-        randomNumber: finalNumber,
-        array: allNumbers.filter((num) => !numberCalledArray.includes(num)),
-      }));
+    const onGameReset = (game) => {
+        setShowConfetti(false);
+        setDisplayNumber(null);
+        setBingoNumbers(initialBingoNumbers);
+        setWinMessage("");
+        setHost(prev => ({
+            ...prev,
+            numberCalled: game.numberCalled,
+            winners: game.winners,
+            players: game.players
+        }));
+        
+        // If not host, show modal
+        const isHost = JSON.parse(localStorage.getItem("bingo-session"))?.isHost;
+        if(!isHost) setIsNewGameModalVisible(true);
     };
 
-    const handleWinningPatternUpdated = (newPattern) => {
-      console.log("Client received winning-pattern-updated event");
-      setHost((prev) => ({
-        ...prev,
-        cardWinningPattern: newPattern,
-      }));
-    };
+    // 3. Bind Events
+    socket.on("connect", attemptReconnect);
+    socket.on("session-reconnected", onSessionReconnected);
+    socket.on("reconnect-failed", onReconnectFailed);
+    socket.on("shuffling", onShuffling);
+    socket.on("number-called", onNumberCalled);
+    socket.on("players", onPlayersUpdate);
+    socket.on("players-won", onPlayersWon);
+    socket.on("game-reset", onGameReset);
+    socket.on("theme-updated", (t) => setTheme(t));
+    socket.on("winning-pattern-updated", (p) => setHost(prev => ({...prev, cardWinningPattern: p})));
+    socket.on("card-refreshed", (cards) => setPlayer(prev => ({ ...prev, cards })));
 
-    // Register all listeners
-    socket.on("connect", handleSocketConnect); // Listen for connection/reconnection
-    socket.on("shuffling", handleShuffling);
-    socket.on("number-called", handleNumberCalled);
-    socket.on("card-refreshed", handleCardRefreshed);
-    socket.on("session-reconnected", handleSessionReconnect);
-    socket.on("reconnect-failed", handleReconnectFailed);
-    socket.on("players-won", handlePlayersWon);
-    socket.on("game-reset", handleGameReset);
-    socket.on("winning-pattern-updated", handleWinningPatternUpdated);
+    // Initial check (in case socket already connected)
+    if(socket.connected) attemptReconnect();
 
     return () => {
-      socket.off("connect", handleSocketConnect);
-      socket.off("card-refreshed", handleCardRefreshed);
-      socket.off("session-reconnected", handleSessionReconnect);
-      socket.off("reconnect-failed", handleReconnectFailed);
-      socket.off("players-won", handlePlayersWon);
-      socket.off("game-reset", handleGameReset);
-      socket.off("number-called", handleNumberCalled);
-      socket.off("shuffling", handleShuffling);
-      socket.off("winning-pattern-updated", handleWinningPatternUpdated);
+        socket.off("connect", attemptReconnect);
+        socket.off("session-reconnected", onSessionReconnected);
+        socket.off("reconnect-failed", onReconnectFailed);
+        socket.off("shuffling", onShuffling);
+        socket.off("number-called", onNumberCalled);
+        socket.off("players", onPlayersUpdate);
+        socket.off("players-won", onPlayersWon);
+        socket.off("game-reset", onGameReset);
+        socket.off("theme-updated");
+        socket.off("winning-pattern-updated");
+        socket.off("card-refreshed");
     };
-  }, [player.id, host.isHost]); // Dependencies for useEffect
+  }, []); // Run ONCE on mount
 
+  // Sync Player Object when Host.players updates
+  useEffect(() => {
+    if (host.players.length > 0 && player.id) {
+        const myData = host.players.find(p => p.id === player.id);
+        if (myData) {
+            // Only update if data actually changed to prevent render loops
+            setPlayer(prev => {
+                if (JSON.stringify(prev.markedNumbers) !== JSON.stringify(myData.markedNumbers) || 
+                    JSON.stringify(prev.result) !== JSON.stringify(myData.result) ||
+                    JSON.stringify(prev.cards) !== JSON.stringify(myData.cards)) {
+                    return { ...prev, ...myData };
+                }
+                return prev;
+            });
+        }
+    }
+  }, [host.players, player.id]);
+
+  // Save Session
   useEffect(() => {
     if (roomCode && (host.isHost || player.id)) {
-      const session = {
-        roomCode,
-        id: host.isHost ? host.id : player.id,
-        isHost: host.isHost,
-      };
-      localStorage.setItem("bingo-session", JSON.stringify(session));
+        localStorage.setItem("bingo-session", JSON.stringify({
+            roomCode,
+            id: host.isHost ? host.id : player.id,
+            isHost: host.isHost
+        }));
     }
-  }, [roomCode, player.id, host.isHost, host.id]);
-  
-  useEffect(() => {
-    if (!host.isHost && player.id) {
-      const updatedPlayer = host.players.find((p) => p.id === player.id);
-      if (updatedPlayer) {
-        setPlayer((prevPlayer) => {
-          if (JSON.stringify(prevPlayer) !== JSON.stringify(updatedPlayer)) {
-            return updatedPlayer;
-          }
-          return prevPlayer;
-        });
-      }
-    }
-  }, [host.players, player.id, host.isHost]);
+  }, [roomCode, host.isHost, host.id, player.id]);
 
-  const value = useMemo(
-    () => ({
-      isOpenModal,
-      setIsOpenModal,
-      host,
-      setHost,
-      bingoNumbers,
-      setBingoNumbers,
-      player,
-      setPlayer,
-      roomCode,
-      setRoomCode,
-      isLoading,
-      isReconnecting,
-      winMessage,
-      setWinMessage,
-      isNewGameModalVisible,
-      setIsNewGameModalVisible,
-      isHostLeftModalVisible,
-      setIsHostLeftModalVisible,
-      confirmation,
-      setConfirmation,
-      resetGame,
-      showConfetti,
-      setShowConfetti,
-      isShuffling,
-      displayNumber,
-      theme,
-      setTheme,
-    }),
-    [
-      isOpenModal,
-      host,
-      roomCode,
-      player,
-      bingoNumbers,
-      isLoading,
-      isReconnecting,
-      winMessage,
-      isNewGameModalVisible,
-      isHostLeftModalVisible,
-      confirmation,
-      showConfetti,
-      isShuffling,
-      displayNumber,
-      theme,
-    ]
-  );
+  const value = useMemo(() => ({
+    roomCode, setRoomCode,
+    isOpenModal, setIsOpenModal,
+    isLoading, isReconnecting,
+    host, setHost,
+    player, setPlayer,
+    bingoNumbers, setBingoNumbers,
+    winMessage, setWinMessage,
+    isNewGameModalVisible, setIsNewGameModalVisible,
+    isHostLeftModalVisible, setIsHostLeftModalVisible,
+    showConfetti, setShowConfetti,
+    confirmation, setConfirmation,
+    isShuffling, displayNumber,
+    theme, setTheme,
+    resetGame
+  }), [roomCode, isOpenModal, isLoading, isReconnecting, host, player, bingoNumbers, winMessage, isNewGameModalVisible, isHostLeftModalVisible, showConfetti, confirmation, isShuffling, displayNumber, theme, resetGame]);
 
   return <GameContext.Provider value={value}>{children}</GameContext.Provider>;
 };

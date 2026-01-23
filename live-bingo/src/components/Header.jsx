@@ -130,7 +130,8 @@ function Header() {
 
   const handleOpenModal = () => {
     setIsOpenModal(true);
-    setIsClicked(false); // Close the dropdown immediately
+    setIsClicked(false);
+    console.log(isOpenModal)
   };
 
   return (

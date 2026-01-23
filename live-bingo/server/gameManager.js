@@ -1,394 +1,358 @@
-
+// server/gameManager.js
 const { v4: uuidv4 } = require("uuid");
 const { generateCard } = require("./utils");
 
-let games = {}; // All active games stored in memory
-
-function calculateBestCardResult(cards, winningPattern, markedNumbers = []) {
-  // Added check for valid winningPattern structure
-  if (!cards || cards.length === 0 || !winningPattern || !winningPattern.index) {
-    return [];
+class Game {
+  constructor(io, roomCode, hostSocketId, hostName, cardNumber, winningPattern, theme) {
+    this.io = io;
+    this.roomCode = roomCode;
+    this.hostId = uuidv4();
+    this.hostSocketId = hostSocketId;
+    this.hostName = hostName;
+    this.cardNumber = cardNumber;
+    this.cardWinningPattern = winningPattern;
+    this.theme = theme;
+    
+    this.players = [];
+    this.numberCalled = [null]; // Free space is effectively null
+    this.winners = [];
+    this.isShuffling = false;
+    this.disconnectTimeouts = new Map(); // Map<socketId, timeoutId>
   }
 
-  const winningIndices = winningPattern.index;
-  const markedNumbersSet = new Set(markedNumbers);
+  calculateBestCardResult(cards, markedNumbers = []) {
+    if (!cards || cards.length === 0 || !this.cardWinningPattern?.index) return [];
 
-  let bestCardResult = null;
-  let minRemaining = Infinity;
+    const winningIndices = this.cardWinningPattern.index;
+    const markedSet = new Set(markedNumbers);
+    let bestResult = null;
+    let minRemaining = Infinity;
 
-  for (const card of cards) {
-    const cardNumbers = [
-      ...card.B,
-      ...card.I,
-      ...card.N,
-      ...card.G,
-      ...card.O,
-    ];
+    for (const card of cards) {
+      const cardNumbers = [...card.B, ...card.I, ...card.N, ...card.G, ...card.O];
+      
+      const requiredNumbers = winningIndices
+        .map((idx) => cardNumbers[idx])
+        .filter((num) => num !== null); // Ignore free space
 
-    const requiredNumbersOnCard = winningIndices
-      .map((index) => cardNumbers[index])
-      .filter((num) => num !== null);
+      const remaining = requiredNumbers.filter((num) => !markedSet.has(num));
 
-    const remainingOnCard = requiredNumbersOnCard.filter(
-      (num) => !markedNumbersSet.has(num)
-    );
+      if (remaining.length < minRemaining) {
+        minRemaining = remaining.length;
+        bestResult = remaining;
+      }
+    }
+    return bestResult || [];
+  }
 
-    if (remainingOnCard.length < minRemaining) {
-      minRemaining = remainingOnCard.length;
-      bestCardResult = remainingOnCard;
+  addPlayer(socketId, name) {
+    const existing = this.players.find(p => p.socketId === socketId);
+    if (existing) return existing;
+
+    const cards = Array.from({ length: this.cardNumber }, generateCard);
+    const player = {
+      id: uuidv4(),
+      socketId,
+      name,
+      cards,
+      markedNumbers: [],
+      result: this.calculateBestCardResult(cards, []),
+      connected: true,
+    };
+    this.players.push(player);
+    return player;
+  }
+
+  removePlayer(socketId) {
+    const idx = this.players.findIndex(p => p.socketId === socketId);
+    if (idx !== -1) {
+      const removed = this.players.splice(idx, 1)[0];
+      return removed;
+    }
+    return null;
+  }
+
+  reconnectPlayer(persistentId, newSocketId) {
+    const player = this.players.find(p => p.id === persistentId);
+    if (player) {
+      // Clear any pending disconnect timeout
+      if (this.disconnectTimeouts.has(player.socketId)) {
+        clearTimeout(this.disconnectTimeouts.get(player.socketId));
+        this.disconnectTimeouts.delete(player.socketId);
+      }
+      player.socketId = newSocketId;
+      player.connected = true;
+      return player;
+    }
+    return null;
+  }
+
+  reconnectHost(persistentId, newSocketId) {
+    if (this.hostId === persistentId) {
+       // Clear any pending disconnect timeout
+       if (this.disconnectTimeouts.has(this.hostSocketId)) {
+        clearTimeout(this.disconnectTimeouts.get(this.hostSocketId));
+        this.disconnectTimeouts.delete(this.hostSocketId);
+      }
+      this.hostSocketId = newSocketId;
+      return true;
+    }
+    return false;
+  }
+
+  markNumbers(playerId, numbers) {
+    const player = this.players.find(p => p.id === playerId);
+    if (!player) return;
+
+    // Sanitize: only allow numbers that have been called
+    const validNumbers = numbers.filter(n => n === null || this.numberCalled.includes(n));
+    player.markedNumbers = validNumbers;
+    player.result = this.calculateBestCardResult(player.cards, validNumbers);
+
+    this.checkWinCondition(player);
+  }
+
+  checkWinCondition(player) {
+    const winningIndices = this.cardWinningPattern.index;
+    const hasWon = player.cards.some(card => {
+      const cardNumbers = [...card.B, ...card.I, ...card.N, ...card.G, ...card.O];
+      const required = winningIndices.map(idx => cardNumbers[idx]).filter(n => n !== null);
+      return required.length > 0 && required.every(req => player.markedNumbers.includes(req));
+    });
+
+    if (hasWon) {
+      const alreadyWinner = this.winners.some(w => w.id === player.id);
+      if (!alreadyWinner) {
+        this.winners.push({ id: player.id, name: player.name });
+        this.io.to(this.roomCode).emit("players-won", this.winners);
+      }
     }
   }
-  return bestCardResult || [];
-}
 
-function updateTheme(io, roomCode, newTheme) {
-  const game = games[roomCode];
-  if (game) {
-    game.theme = newTheme;
-    io.to(roomCode).emit("theme-updated", newTheme);
-  }
-}
+  rollNumber(socket) {
+    if (this.hostSocketId !== socket.id || this.winners.length > 0 || this.isShuffling) return;
 
-function rollAndShuffleNumber(io, socket, roomCode) {
-  const game = games[roomCode];
-  if (
-    !game ||
-    game.hostSocketId !== socket.id ||
-    (game.winners && game.winners.length > 0) ||
-    game.isShuffling
-  ) {
-    return;
-  }
+    this.isShuffling = true;
+    
+    // Animation loop
+    const interval = setInterval(() => {
+        const rand = Math.floor(Math.random() * 75) + 1;
+        this.io.to(this.roomCode).emit("shuffling", rand);
+    }, 60);
 
-  game.isShuffling = true;
-
-  const shuffleInterval = setInterval(() => {
-    const randomShuffleNumber = Math.floor(Math.random() * 75) + 1;
-    io.to(roomCode).emit("shuffling", randomShuffleNumber);
-  }, 60);
-
-  setTimeout(() => {
-    clearInterval(shuffleInterval);
-    game.isShuffling = false;
-
-    const availableNumbers = [...Array(75)]
-      .map((_, i) => i + 1)
-      .filter((n) => !game.numberCalled.includes(n));
-
-    if (availableNumbers.length > 0) {
-      const randomNumber =
-        availableNumbers[Math.floor(Math.random() * availableNumbers.length)];
-      rollNumber(io, socket, randomNumber, roomCode);
-    }
-  }, 1500);
-}
-
-function endGame(io, roomCode) {
-    const game = games[roomCode];
-    if (game) {
-        console.log(`Ending game in room ${roomCode}.`);
-        io.to(roomCode).emit("host-left");
-
-        const playerSockets = game.players.map(p => io.sockets.sockets.get(p.socketId)).filter(s => s);
-        playerSockets.forEach(socket => socket.disconnect(true));
-
-        const hostSocket = io.sockets.sockets.get(game.hostSocketId);
-        if (hostSocket) {
-            hostSocket.disconnect(true);
+    setTimeout(() => {
+        clearInterval(interval);
+        this.isShuffling = false;
+        
+        const available = Array.from({ length: 75 }, (_, i) => i + 1).filter(n => !this.numberCalled.includes(n));
+        if (available.length > 0) {
+            const nextNum = available[Math.floor(Math.random() * available.length)];
+            this.numberCalled.push(nextNum);
+            this.io.to(this.roomCode).emit("number-called", this.numberCalled);
         }
+    }, 1500);
+  }
 
-        delete games[roomCode];
-        console.log(`Room ${roomCode} has been closed and removed.`);
-    }
+  resetGame() {
+    this.numberCalled = [null];
+    this.winners = [];
+    this.isShuffling = false;
+    this.players.forEach(p => {
+        p.markedNumbers = [];
+        p.result = this.calculateBestCardResult(p.cards, []);
+    });
+  }
+
+  getPublicState() {
+    return {
+        hostName: this.hostName,
+        hostId: this.hostId, // Needed for session validation
+        cardNumber: this.cardNumber,
+        cardWinningPattern: this.cardWinningPattern,
+        numberCalled: this.numberCalled,
+        players: this.players,
+        winners: this.winners,
+        theme: this.theme
+    };
+  }
 }
 
-function createRoom(io, socket, hostName, cardNumber, cardWinningPattern, theme) {
-  const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
-  const hostId = uuidv4();
+// Global Store
+const games = new Map();
 
-  games[roomCode] = {
-    hostName,
-    hostId,
-    hostSocketId: socket.id,
-    hostConnected: true,
-    cardNumber,
-    cardWinningPattern,
-    numberCalled: [null],
-    players: [],
-    winners: [],
-    isNewRoundStarting: false,
-    disconnectTimeout: null,
-    isShuffling: false,
-    theme: theme || {
-      color: '#374151',
-      backgroundColor: '#111827',
-      backgroundImage: '',
-      cardGridColor: '#4b5563',
-      cardLetterColor: '#ffffff',
-      cardNumberColor: '#ffffff',
-    },
-  };
+// --- Exported Helper Functions mapped to Socket Events ---
 
-  socket.join(roomCode);
-  socket.emit("room-created", roomCode, hostId);
-  console.log(`🎲 Room created: ${roomCode}`);
+function createRoom(io, socket, hostName, cardNumber, winningPattern, theme) {
+    const roomCode = uuidv4().replace(/-/g, "").substring(0, 6).toUpperCase();
+    const game = new Game(io, roomCode, socket.id, hostName, cardNumber, winningPattern, theme);
+    games.set(roomCode, game);
+    
+    socket.join(roomCode);
+    socket.emit("room-created", roomCode, game.hostId);
+    console.log(`[Game] Room created: ${roomCode}`);
 }
 
 function joinRoom(io, socket, playerName, roomCode) {
-  const game = games[roomCode];
-  if (!game) {
-    socket.emit("room-not-found", "Room code doesn't exist.");
-    return;
-  }
+    const game = games.get(roomCode);
+    if (!game) return socket.emit("room-not-found", "Room does not exist.");
+    if (game.numberCalled.length > 1) return socket.emit("game-started", "Game already in progress.");
 
-  if (game.numberCalled.length > 1) {
-    socket.emit("game-started", "The game has already started in this room.");
-    return;
-  }
-
-  // Prevent duplicate joins from the same socket
-  const existingPlayer = game.players.find(p => p.socketId === socket.id);
-  if (existingPlayer) {
-      // Ignore and just re-emit success (idempotent)
-      socket.emit("joined-room", roomCode, { ...game, newPlayer: existingPlayer });
-      return;
-  }
-
-  const cards = Array.from({ length: game.cardNumber }, generateCard);
-  const playerId = uuidv4();
-  const player = {
-    id: playerId,
-    socketId: socket.id,
-    name: playerName,
-    cards,
-    result: calculateBestCardResult(cards, game.cardWinningPattern, []),
-    markedNumbers: [],
-    connected: true,
-  };
-
-  game.players.push(player);
-
-  socket.join(roomCode);
-  socket.emit("joined-room", roomCode, { ...game, newPlayer: player });
-
-  io.to(roomCode).emit("players", game.players);
-}
-
-function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
-    const game = games[roomCode];
-    if (!game) {
-        socket.emit("reconnect-failed", "Room not found");
-        return;
-    }
-
+    const player = game.addPlayer(socket.id, playerName);
     socket.join(roomCode);
-
-    if (isHost && game.hostId === persistentId) {
-        game.hostSocketId = socket.id;
-        game.hostConnected = true;
-        if (game.disconnectTimeout) {
-            clearTimeout(game.disconnectTimeout);
-            game.disconnectTimeout = null;
-        }
-    } else if (!isHost) {
-        const player = game.players.find((p) => p.id === persistentId);
-        if (player) {
-            player.socketId = socket.id;
-            player.connected = true;
-            if (player.disconnectTimeout) {
-                clearTimeout(player.disconnectTimeout);
-                player.disconnectTimeout = null;
-            }
-        } else {
-            socket.emit("reconnect-failed", "Player not found");
-            return;
-        }
-    } else {
-        socket.emit("reconnect-failed", "Authorization error");
-        return;
-    }
-
-    socket.emit("session-reconnected", { ...game, roomCode });
+    
+    // Emit full state to the joiner, but update everyone else on player list
+    socket.emit("joined-room", roomCode, { ...game.getPublicState(), newPlayer: player });
     io.to(roomCode).emit("players", game.players);
 }
 
-function leaveGame(io, socket) {
-    for (const [roomCode, game] of Object.entries(games)) {
-        const playerIndex = game.players.findIndex((p) => p.socketId === socket.id);
-        if (playerIndex !== -1) {
-            const removedPlayer = game.players.splice(playerIndex, 1)[0];
-            io.to(roomCode).emit("player-left", removedPlayer.name);
+function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
+    const game = games.get(roomCode);
+    if (!game) return socket.emit("reconnect-failed", "Room expired or not found");
+
+    socket.join(roomCode);
+    
+    if (isHost) {
+        if (game.reconnectHost(persistentId, socket.id)) {
+            socket.emit("session-reconnected", { ...game.getPublicState(), roomCode });
+        } else {
+            socket.emit("reconnect-failed", "Invalid Host Session");
+        }
+    } else {
+        const player = game.reconnectPlayer(persistentId, socket.id);
+        if (player) {
+            socket.emit("session-reconnected", { ...game.getPublicState(), roomCode });
             io.to(roomCode).emit("players", game.players);
+        } else {
+            socket.emit("reconnect-failed", "Player not found");
+        }
+    }
+}
+
+function handleDisconnect(io, socket) {
+    for (const [code, game] of games.entries()) {
+        // Host Disconnect Logic
+        if (game.hostSocketId === socket.id) {
+            // Set a timeout to destroy the room if host doesn't return
+            const timer = setTimeout(() => {
+                if (games.has(code) && games.get(code).hostSocketId === socket.id) {
+                    endGame(io, code);
+                }
+            }, 86400000); // 24 hours
+            game.disconnectTimeouts.set(socket.id, timer);
+            return;
+        }
+
+        // Player Disconnect Logic
+        const player = game.players.find(p => p.socketId === socket.id);
+        if (player) {
+            player.connected = false;
+            io.to(code).emit("players", game.players);
+            
+            const timer = setTimeout(() => {
+                // If still disconnected, remove player
+                if (games.has(code)) {
+                    const currentP = games.get(code).players.find(p => p.id === player.id);
+                    if (currentP && !currentP.connected) {
+                        game.removePlayer(socket.id);
+                        io.to(code).emit("players", game.players);
+                    }
+                }
+            }, 3600000); // 1 hour grace period
+            game.disconnectTimeouts.set(socket.id, timer);
+            return;
+        }
+    }
+}
+
+function endGame(io, roomCode) {
+    if (games.has(roomCode)) {
+        io.to(roomCode).emit("host-left");
+        io.in(roomCode).disconnectSockets();
+        games.delete(roomCode);
+        console.log(`[Game] Room ${roomCode} destroyed.`);
+    }
+}
+
+function requestNewNumber(io, socket, roomCode) {
+    const game = games.get(roomCode);
+    if(game) game.rollNumber(socket);
+}
+
+function markNumber(io, roomCode, playerId, markedNumbers) {
+    const game = games.get(roomCode);
+    if(game) {
+        game.markNumbers(playerId, markedNumbers);
+        io.to(roomCode).emit("players", game.players);
+    }
+}
+
+function newGame(io, socket, roomCode) {
+    const game = games.get(roomCode);
+    if(game && game.hostSocketId === socket.id) {
+        game.resetGame();
+        io.to(roomCode).emit("game-reset", game.getPublicState());
+    }
+}
+
+function updateTheme(io, roomCode, newTheme) {
+    const game = games.get(roomCode);
+    if(game) {
+        game.theme = newTheme;
+        io.to(roomCode).emit("theme-updated", newTheme);
+    }
+}
+
+function updateWinningPattern(io, socket, roomCode, newPattern) {
+    const game = games.get(roomCode);
+    if (game && game.hostSocketId === socket.id) {
+        game.cardWinningPattern = newPattern;
+        // Recalculate results for all players
+        game.players.forEach(p => {
+            p.result = game.calculateBestCardResult(p.cards, p.markedNumbers);
+        });
+        io.to(roomCode).emit("winning-pattern-updated", newPattern);
+        io.to(roomCode).emit("players", game.players);
+    }
+}
+
+function refreshCard(io, socket, roomCode, playerId, cardIndex) {
+    const game = games.get(roomCode);
+    if (!game || game.numberCalled.length > 1) return; // Cant refresh if game started
+
+    const player = game.players.find(p => p.id === playerId);
+    if (player) {
+        player.cards[cardIndex] = generateCard();
+        player.result = game.calculateBestCardResult(player.cards, player.markedNumbers);
+        socket.emit("card-refreshed", player.cards);
+        io.to(roomCode).emit("players", game.players);
+    }
+}
+
+function leaveGame(io, socket) {
+    // Helper to find room by socket if roomCode isn't sent
+    for (const [code, game] of games.entries()) {
+        const player = game.removePlayer(socket.id);
+        if(player) {
+            io.to(code).emit("player-left", player.name);
+            io.to(code).emit("players", game.players);
+            socket.leave(code);
             socket.emit("leave-acknowledged");
             break;
         }
     }
 }
 
-function handleDisconnect(io, socket) {
-  for (const [roomCode, game] of Object.entries(games)) {
-    if (game.hostSocketId === socket.id) {
-      game.hostConnected = false;
-      // Change timeout to 24 hours (86400000 ms)
-      game.disconnectTimeout = setTimeout(() => {
-        if (games[roomCode] && !games[roomCode].hostConnected) {
-          endGame(io, roomCode);
-        }
-      }, 86400000); 
-      break;
-    }
-
-    const playerIndex = game.players.findIndex((p) => p.socketId === socket.id);
-    if (playerIndex !== -1) {
-      const player = game.players[playerIndex];
-      player.connected = false;
-      io.to(roomCode).emit("players", game.players);
-      // Change timeout to 24 hours (86400000 ms)
-      player.disconnectTimeout = setTimeout(() => {
-        if (games[roomCode] && !player.connected) {
-          game.players.splice(playerIndex, 1);
-          io.to(roomCode).emit("players", game.players);
-        }
-      }, 86400000);
-      break;
-    }
-  }
-}
-
-function updateWinningPattern(io, socket, roomCode, newPattern) {
-  const game = games[roomCode];
-  if (game && game.hostSocketId === socket.id) {
-    game.cardWinningPattern = newPattern;
-    game.players.forEach((player) => {
-      player.result = calculateBestCardResult(
-        player.cards,
-        newPattern,
-        player.markedNumbers
-      );
-    });
-    io.to(roomCode).emit("winning-pattern-updated", newPattern);
-    io.to(roomCode).emit("players", game.players);
-  }
-}
-
-function newGame(io, socket, roomCode) {
-  const game = games[roomCode];
-  if (!game || game.hostSocketId !== socket.id) {
-    return;
-  }
-
-  game.isNewRoundStarting = true;
-  game.numberCalled = [null];
-  game.winners = [];
-
-  game.players.forEach((player) => {
-    player.result = calculateBestCardResult(
-      player.cards,
-      game.cardWinningPattern,
-      []
-    );
-    player.markedNumbers = [];
-  });
-
-  io.to(roomCode).emit("game-reset", game);
-
-  setTimeout(() => {
-    if (games[roomCode]) {
-      games[roomCode].isNewRoundStarting = false;
-    }
-  }, 5000);
-}
-
-function refreshCard(io, socket, roomCode, playerId, cardIndex) {
-  const game = games[roomCode];
-  if (!game) return;
-
-  const player = game.players.find((p) => p.id === playerId);
-  if (!player || game.numberCalled.length > 1) return;
-
-  const newCard = generateCard();
-  player.cards[cardIndex] = newCard;
-
-  player.result = calculateBestCardResult(
-    player.cards,
-    game.cardWinningPattern,
-    []
-  );
-  player.markedNumbers = [];
-
-  socket.emit("card-refreshed", player.cards);
-  io.to(roomCode).emit("players", game.players);
-}
-
-function markNumber(io, roomCode, playerId, markedNumbers) {
-    const game = games[roomCode];
-    if (!game) return;
-
-    const player = game.players.find((p) => p.id === playerId);
-    if (!player) return;
-
-
-    // Ensure that every number the player is trying to mark has actually been called by the host.
-    // We allow `null` (Free space) or numbers that exist in `game.numberCalled`.
-    const sanitizedMarkedNumbers = markedNumbers.filter(num => 
-        num === null || game.numberCalled.includes(num)
-    );
-
-    // Update player with sanitized numbers
-    player.markedNumbers = sanitizedMarkedNumbers;
-    
-    player.result = calculateBestCardResult(player.cards, game.cardWinningPattern, player.markedNumbers);
-    io.to(roomCode).emit("players", game.players);
-
-    const winningPatternIndices = game.cardWinningPattern.index;
-    const isAlreadyWinner = game.winners.some(winner => winner.id === player.id);
-
-    if (isAlreadyWinner) return;
-
-    for (const card of player.cards) {
-        const cardNumbers = [...card.B, ...card.I, ...card.N, ...card.G, ...card.O];
-        const requiredNumbers = winningPatternIndices.map(index => cardNumbers[index]).filter(num => num !== null);
-        
-        // Win Condition Check
-        if (requiredNumbers.length > 0 && requiredNumbers.every(num => player.markedNumbers.includes(num))) {
-            game.winners.push({ id: player.id, name: player.name });
-            io.to(roomCode).emit("players-won", game.winners);
-            break;
-        }
-    }
-}
-
-function rollNumber(io, socket, numberCalled, roomCode) {
-  const game = games[roomCode];
-  if (
-    !game ||
-    !numberCalled ||
-    (game.winners && game.winners.length > 0) ||
-    game.isNewRoundStarting ||
-    game.players.length < 1
-  ) {
-    return;
-  }
-
-  if (!game.numberCalled.includes(numberCalled)) {
-    game.numberCalled.push(numberCalled);
-  }
-
-  io.to(roomCode).emit("number-called", game.numberCalled);
-}
-
 module.exports = {
-  createRoom,
-  joinRoom,
-  rollNumber,
-  handleDisconnect,
-  reconnectPlayer,
-  newGame,
-  leaveGame,
-  endGame,
-  rollAndShuffleNumber,
-  refreshCard,
-  updateWinningPattern,
-  markNumber,
-  updateTheme,
-};
+    createRoom,
+    joinRoom,
+    reconnectPlayer,
+    handleDisconnect,
+    requestNewNumber,
+    markNumber,
+    newGame,
+    endGame,
+    leaveGame,
+    updateTheme,
+    updateWinningPattern,
+    refreshCard
+};  
