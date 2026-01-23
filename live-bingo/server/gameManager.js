@@ -145,6 +145,14 @@ function joinRoom(io, socket, playerName, roomCode) {
     return;
   }
 
+  // Prevent duplicate joins from the same socket
+  const existingPlayer = game.players.find(p => p.socketId === socket.id);
+  if (existingPlayer) {
+      // Ignore and just re-emit success (idempotent)
+      socket.emit("joined-room", roomCode, { ...game, newPlayer: existingPlayer });
+      return;
+  }
+
   const cards = Array.from({ length: game.cardNumber }, generateCard);
   const playerId = uuidv4();
   const player = {
@@ -316,7 +324,16 @@ function markNumber(io, roomCode, playerId, markedNumbers) {
     const player = game.players.find((p) => p.id === playerId);
     if (!player) return;
 
-    player.markedNumbers = markedNumbers;
+
+    // Ensure that every number the player is trying to mark has actually been called by the host.
+    // We allow `null` (Free space) or numbers that exist in `game.numberCalled`.
+    const sanitizedMarkedNumbers = markedNumbers.filter(num => 
+        num === null || game.numberCalled.includes(num)
+    );
+
+    // Update player with sanitized numbers
+    player.markedNumbers = sanitizedMarkedNumbers;
+    
     player.result = calculateBestCardResult(player.cards, game.cardWinningPattern, player.markedNumbers);
     io.to(roomCode).emit("players", game.players);
 
@@ -328,6 +345,8 @@ function markNumber(io, roomCode, playerId, markedNumbers) {
     for (const card of player.cards) {
         const cardNumbers = [...card.B, ...card.I, ...card.N, ...card.G, ...card.O];
         const requiredNumbers = winningPatternIndices.map(index => cardNumbers[index]).filter(num => num !== null);
+        
+        // Win Condition Check
         if (requiredNumbers.length > 0 && requiredNumbers.every(num => player.markedNumbers.includes(num))) {
             game.winners.push({ id: player.id, name: player.name });
             io.to(roomCode).emit("players-won", game.winners);

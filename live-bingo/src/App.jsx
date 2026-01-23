@@ -11,10 +11,9 @@ import NoRoom from "./pages/Game/NoRoom";
 import { useContext, useEffect } from "react";
 import GameContext from "./context/GameContext";
 import { socket } from "./utils/socket";
-import Theme from "./pages/Theme/Theme"; // Import the Theme component
-import "./background.css"; // Import the new background stylesheet
+import Theme from "./pages/Theme/Theme";
+import "./background.css"; 
 
-// This component lives inside the router and handles navigation events
 const NavigationHandler = () => {
   const { setIsHostLeftModalVisible } = useContext(GameContext);
 
