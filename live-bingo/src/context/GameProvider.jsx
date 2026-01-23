@@ -4,7 +4,6 @@ import GameContext from "./GameContext";
 import { socket } from "../utils/socket";
 
 const GameProvider = ({ children }) => {
-  // ... (keep existing state definitions) ...
   const [roomCode, setRoomCode] = useState("");
   const [isOpenModal, setIsOpenModal] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,7 +56,6 @@ const GameProvider = ({ children }) => {
   const [player, setPlayer] = useState(initialPlayerState);
   const [host, setHost] = useState(initialHostState);
 
-  // ... (keep useEffect for theme-updated and confetti) ...
   useEffect(() => {
     const handleThemeUpdate = (newTheme) => {
       setTheme(newTheme);
@@ -86,33 +84,43 @@ const GameProvider = ({ children }) => {
     setIsNewGameModalVisible(false);
     setIsHostLeftModalVisible(false);
     setShowConfetti(false);
-    // CHANGED: localStorage
     localStorage.removeItem("bingo-session");
-    socket.disconnect();
+    // Force a socket disconnect/reconnect to clear backend state mapping
+    socket.disconnect(); 
     socket.connect();
     console.log("Game state has been reset and socket reconnected.");
   };
 
   useEffect(() => {
-    // CHANGED: localStorage
-    const session = JSON.parse(localStorage.getItem("bingo-session"));
-    if (session && session.roomCode) {
-      setIsReconnecting(true);
-      socket.emit(
-        "reconnect-player",
-        session.roomCode,
-        session.id,
-        session.isHost
-      );
-    } else {
-      setIsLoading(false);
-    }
+    // Defines the logic to restore session
+    const restoreSession = () => {
+      const session = JSON.parse(localStorage.getItem("bingo-session"));
+      if (session && session.roomCode) {
+        console.log("🔄 Attempting to restore session...", session);
+        setIsReconnecting(true);
+        socket.emit(
+          "reconnect-player",
+          session.roomCode,
+          session.id,
+          session.isHost
+        );
+      } else {
+        setIsLoading(false);
+      }
+    };
+
+    // Run immediately on mount
+    restoreSession();
+
+    // CRITICAL FIX: Re-run restoration whenever the socket connects/reconnects.
+    // This ensures the server always has the correct socket ID for the host/player.
+    const handleSocketConnect = () => {
+      console.log("✅ Socket connected/reconnected. Verifying session...");
+      restoreSession();
+    };
 
     const handleSessionReconnect = (game) => {
-      // CHANGED: localStorage
-      const currentSession = JSON.parse(
-        localStorage.getItem("bingo-session")
-      );
+      const currentSession = JSON.parse(localStorage.getItem("bingo-session"));
       setRoomCode(game.roomCode);
       setHost({
         id: game.hostId,
@@ -152,18 +160,22 @@ const GameProvider = ({ children }) => {
       setIsReconnecting(false);
     };
 
-    // ... (keep other socket handlers like handleReconnectFailed, handleCardRefreshed, etc.) ...
     const handleReconnectFailed = (message) => {
       console.error("Reconnect failed:", message);
-      setIsLoading(false);
+      // Only stop loading if we aren't in a valid game state
+      if (!roomCode) {
+        setIsLoading(false);
+      }
       setIsReconnecting(false);
     };
+
     const handleCardRefreshed = (newCards) => {
       setPlayer((prev) => ({
         ...prev,
         cards: newCards,
       }));
     };
+
     const handlePlayersWon = (winners) => {
       setHost((prev) => ({ ...prev, winners }));
       const amIWinner = winners.some((winner) => winner.id === player.id);
@@ -208,6 +220,14 @@ const GameProvider = ({ children }) => {
     const handleShuffling = (num) => {
       setIsShuffling(true);
       setDisplayNumber(num);
+      
+      // FAILSAFE: Force stop shuffling after 3 seconds if server response is lost
+      setTimeout(() => {
+        setIsShuffling((current) => {
+            if(current === true) return false;
+            return current;
+        });
+      }, 3000);
     };
 
     const handleNumberCalled = (numberCalledArray) => {
@@ -225,6 +245,7 @@ const GameProvider = ({ children }) => {
         array: allNumbers.filter((num) => !numberCalledArray.includes(num)),
       }));
     };
+
     const handleWinningPatternUpdated = (newPattern) => {
       console.log("Client received winning-pattern-updated event");
       setHost((prev) => ({
@@ -233,6 +254,8 @@ const GameProvider = ({ children }) => {
       }));
     };
 
+    // Register all listeners
+    socket.on("connect", handleSocketConnect); // Listen for connection/reconnection
     socket.on("shuffling", handleShuffling);
     socket.on("number-called", handleNumberCalled);
     socket.on("card-refreshed", handleCardRefreshed);
@@ -243,6 +266,7 @@ const GameProvider = ({ children }) => {
     socket.on("winning-pattern-updated", handleWinningPatternUpdated);
 
     return () => {
+      socket.off("connect", handleSocketConnect);
       socket.off("card-refreshed", handleCardRefreshed);
       socket.off("session-reconnected", handleSessionReconnect);
       socket.off("reconnect-failed", handleReconnectFailed);
@@ -252,7 +276,7 @@ const GameProvider = ({ children }) => {
       socket.off("shuffling", handleShuffling);
       socket.off("winning-pattern-updated", handleWinningPatternUpdated);
     };
-  }, [player.id, host.isHost]);
+  }, [player.id, host.isHost]); // Dependencies for useEffect
 
   useEffect(() => {
     if (roomCode && (host.isHost || player.id)) {
@@ -261,7 +285,6 @@ const GameProvider = ({ children }) => {
         id: host.isHost ? host.id : player.id,
         isHost: host.isHost,
       };
-      // CHANGED: localStorage
       localStorage.setItem("bingo-session", JSON.stringify(session));
     }
   }, [roomCode, player.id, host.isHost, host.id]);

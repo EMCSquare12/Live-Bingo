@@ -1,4 +1,3 @@
-// src/pages/Game/Player.jsx
 import { useContext, useState, useEffect } from "react";
 import BingoCard from "../../components/BingoCard";
 import GameContext from "../../context/GameContext";
@@ -17,10 +16,17 @@ function Player() {
   } = useContext(GameContext);
   const [copied, setCopied] = useState(false);
   const cards = player.cards ?? [];
+  
+  // Initialize state from props. Syncing logic moved to useEffect.
   const [markedNumbers, setMarkedNumbers] = useState(player.markedNumbers || []);
 
+  // Only sync with server if it's a Game Reset (server sends empty array)
+  // or if the server sanitizes an invalid mark (we have marks, server has none).
+  // We avoid syncing active gameplay states to prevent flickering on laggy networks.
   useEffect(() => {
-    setMarkedNumbers(player.markedNumbers || []);
+    if (player.markedNumbers && player.markedNumbers.length === 0) {
+        setMarkedNumbers([]);
+    }
   }, [player.markedNumbers]);
 
   const handleRefresh = (cardIndex) => {

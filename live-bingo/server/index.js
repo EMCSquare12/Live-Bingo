@@ -1,10 +1,14 @@
-const express = require("express");
-const http = require("http");
-const { Server } = require("socket.io");
-const cors = require("cors");
-const registerSocketHandlers = require("./socket");
-const path = require("path");
-const { cleanupInactiveRooms } = require("./gameManager"); // Optional cleanup
+import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import cors from "cors";
+import registerSocketHandlers from "./socket.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+// Define __dirname for ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 const server = http.createServer(app);
@@ -21,9 +25,6 @@ app.get("*", (req, res) => {
 
 // Register socket events
 registerSocketHandlers(io);
-
-// Optional: periodic cleanup
-// setInterval(() => cleanupInactiveRooms(io), 5 * 60 * 1000);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {

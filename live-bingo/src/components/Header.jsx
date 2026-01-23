@@ -6,104 +6,36 @@ import WinningPatternCard from "./WinningPatternCard.jsx";
 import GameContext from "../context/GameContext.js";
 import { socket } from "../utils/socket.js";
 
-// ... (SVG components MdVolumeUp, MdVolumeOff, FaCaretUp, FaCaretDown, HiMenu, HiX remain unchanged) ...
+// ... (SVGs remain unchanged, omitted for brevity but include them in your file) ...
 const MdVolumeUp = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="text-xl"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" className="text-xl" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
   </svg>
 );
-
 const MdVolumeOff = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="text-xl"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"
-      clipRule="evenodd"
-    />
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M17 14l2-2m0 0l2-2m-2 2L17 10"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" className="text-xl" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" clipRule="evenodd" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2L17 10" />
   </svg>
 );
-
 const FaCaretUp = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-4 h-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
   </svg>
 );
-
 const FaCaretDown = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-4 h-4"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
     <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
   </svg>
 );
-
 const HiMenu = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-6 h-6"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M4 6h16M4 12h16m-7 6h7"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16m-7 6h7" />
   </svg>
 );
-
 const HiX = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="w-6 h-6"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    strokeWidth={2}
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      d="M6 18L18 6M6 6l12 12"
-    />
+  <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
   </svg>
 );
 
@@ -127,6 +59,7 @@ function Header() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Logic to close dropdown when clicking outside
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setIsClicked(false);
       }
@@ -192,7 +125,13 @@ function Header() {
     });
   };
 
+  // Determine if game has started to disable pattern changing
   const isGameStarted = host.numberCalled && host.numberCalled.some(num => num !== null);
+
+  const handleOpenModal = () => {
+    setIsOpenModal(true);
+    setIsClicked(false); // Close the dropdown immediately
+  };
 
   return (
     <>
@@ -224,10 +163,8 @@ function Header() {
               <WinningPatternCard />
               {host.isHost && (
                 <button
-                  onClick={() => {
-                    setIsOpenModal(true);
-                    setIsClicked(false);
-                  }}
+                  type="button"
+                  onClick={handleOpenModal}
                   disabled={isGameStarted}
                   className="mt-2 text-blue-600 underline text-md font-inter hover:text-blue-700 disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
                 >
@@ -330,10 +267,8 @@ function Header() {
               <WinningPatternCard />
               {host.isHost && (
                 <button
-                  onClick={() => {
-                    setIsOpenModal(true);
-                    setIsClicked(false);
-                  }}
+                  type="button"
+                  onClick={handleOpenModal}
                   disabled={isGameStarted}
                   className="mt-2 text-blue-600 underline text-md font-inter hover:text-blue-700 disabled:text-gray-400 disabled:no-underline disabled:cursor-not-allowed"
                 >

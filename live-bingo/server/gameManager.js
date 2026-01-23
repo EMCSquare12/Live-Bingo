@@ -1,11 +1,12 @@
-// server/gameManager.js
+
 const { v4: uuidv4 } = require("uuid");
 const { generateCard } = require("./utils");
 
 let games = {}; // All active games stored in memory
 
 function calculateBestCardResult(cards, winningPattern, markedNumbers = []) {
-  if (!cards || cards.length === 0) {
+  // Added check for valid winningPattern structure
+  if (!cards || cards.length === 0 || !winningPattern || !winningPattern.index) {
     return [];
   }
 
