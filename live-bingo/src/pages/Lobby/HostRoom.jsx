@@ -9,11 +9,10 @@ function HostRoom() {
   const { setIsOpenModal, host, setHost, setRoomCode, theme } =
     useContext(GameContext);
   const [isClickList, setIsClickList] = useState(false);
-  const [errors, setErrors] = useState({}); // State to hold validation errors
+  const [errors, setErrors] = useState({});
   const listRef = useRef(null);
   const navigate = useNavigate();
 
-  // A small preview for the winning pattern
   const PatternPreview = ({ pattern }) => {
     return (
       <div className="grid grid-cols-5 gap-0.5 p-1 bg-gray-600 rounded-sm">
@@ -36,7 +35,6 @@ function HostRoom() {
     );
   };
 
-  // New validation function
   const validateInputs = () => {
     const newErrors = {};
     if (!host.hostName.trim()) {
@@ -51,7 +49,7 @@ function HostRoom() {
 
   const hostGame = () => {
     if (!validateInputs()) {
-      return; // Stop if validation fails
+      return;
     }
     socket.emit(
       "create-room",
@@ -87,7 +85,7 @@ function HostRoom() {
     return () => {
       window.removeEventListener("keydown", handleKeyPress);
     };
-  }, [host, hostGame]); // Re-bind listener if host state changes
+  }, [host, hostGame]);
 
   const handleClickOutside = (event) => {
     if (listRef.current && !listRef.current.contains(event.target)) {
@@ -111,7 +109,7 @@ function HostRoom() {
   };
 
   const handleCardPattern = (value) => {
-    setErrors((prev) => ({ ...prev, cardWinningPattern: null })); // Clear error on selection
+    setErrors((prev) => ({ ...prev, cardWinningPattern: null }));
     if (value === "Blackout") {
       const newArr = Array.from({ length: 25 }, (_, index) => index);
       setHost((prev) => ({
@@ -139,7 +137,7 @@ function HostRoom() {
 
   return (
     <div
-      className={`flex justify-center w-full h-full md:justify-start ${
+      className={`flex justify-center w-full h-full md:justify-start relative ${
         theme.isTransparent ? "" : "bg-gray-900"
       }`}
     >
@@ -243,7 +241,7 @@ function HostRoom() {
             >
               <div className="flex items-center gap-2">
                 <input
-                  onClick={(e) => handleCardPattern(e.target.value)}
+                  onChange={(e) => handleCardPattern(e.target.value)} // FIX: Changed from onClick to onChange
                   id="blackout"
                   type="radio"
                   value="Blackout"
@@ -281,7 +279,7 @@ function HostRoom() {
                   name="cardPattern"
                   value="Customize"
                   className="w-5 h-5 rounded-md outline-none accent-blue-500"
-                  onClick={(e) => handleCardPattern(e.target.value)}
+                  onChange={(e) => handleCardPattern(e.target.value)}
                   checked={
                     host.cardWinningPattern.name &&
                     host.cardWinningPattern.name !== "Blackout"

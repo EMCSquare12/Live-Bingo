@@ -104,6 +104,7 @@ function Host() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isPlayersListOpen, setIsPlayersListOpen] = useState(false);
   const {
+    isOpenModal,
     host,
     setHost,
     bingoNumbers,
@@ -204,7 +205,6 @@ function Host() {
   // Re-usable component for Players List content - Adjusted Search Bar container
   const PlayersListContent = () => (
     <>
-      {/* MODIFIED: Search bar container */}
       <div className="flex flex-col sm:flex-row items-center justify-between p-3 border-b border-gray-500 lg:border-b-0 lg:p-2 gap-2">
         <div className="flex flex-row items-center">
           <h1 className="font-medium text-gray-300 font-inter text-md w-fit">
@@ -277,8 +277,8 @@ function Host() {
   );
 
   return (
-    <div className="flex flex-col items-center justify-start w-full min-h-screen">
-      {/* MODIFIED: Top Info Bar Layout for better wrapping */}
+    <div className="flex flex-col items-center justify-start w-full min-h-screen relative">
+      {isOpenModal && <WinningPatternModal />}
       <div className="flex flex-wrap items-center justify-center w-full gap-x-6 gap-y-2 px-4 pt-5 md:justify-between md:px-10">
         <h1 className="py-1 font-medium text-gray-300 text-md md:text-sm font-inter w-fit whitespace-nowrap">
           Host:{" "}
