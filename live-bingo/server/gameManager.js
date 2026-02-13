@@ -69,7 +69,7 @@ removePlayer(socketId) {
     if (idx !== -1) {
       const removed = this.players.splice(idx, 1)[0];
       
-      // FIX: Clean up timeout map
+      // FIX: Clean up timeout to prevent memory leak
       if (this.disconnectTimeouts.has(socketId)) {
         clearTimeout(this.disconnectTimeouts.get(socketId));
         this.disconnectTimeouts.delete(socketId);
@@ -78,7 +78,7 @@ removePlayer(socketId) {
       return removed;
     }
     return null;
-}
+  }
 
   reconnectPlayer(persistentId, newSocketId) {
     const player = this.players.find(p => p.id === persistentId);
@@ -221,11 +221,11 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
     
     if (isHost) {
         if (game.reconnectHost(persistentId, socket.id)) {
-            // Send hostId explicitly back to the host
+            // SECURITY FIX: Only send hostId to the verified host
             socket.emit("session-reconnected", { 
                 ...game.getPublicState(), 
                 roomCode, 
-                hostId: game.hostId // Only send to authenticated host
+                hostId: game.hostId 
             });
         } else {
             socket.emit("reconnect-failed", "Invalid Host Session");
@@ -233,7 +233,7 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
     } else {
         const player = game.reconnectPlayer(persistentId, socket.id);
         if (player) {
-            // Do NOT send hostId to players
+            // Regular players do not need hostId
             socket.emit("session-reconnected", { 
                 ...game.getPublicState(), 
                 roomCode 
