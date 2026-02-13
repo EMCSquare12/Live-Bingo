@@ -3,9 +3,12 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "node index.js"
-  },
+  "dev": "concurrently \"vite\" \"npm run server\"",
+  "server": "cd server && node index.js",
+  "build": "vite build",
+  "lint": "eslint .",
+  "preview": "vite preview"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -14,6 +17,10 @@
     "cors": "^2.8.5",
     "express": "^4.21.2",
     "socket.io": "^4.8.1",
+    "start": "^5.1.0",
     "uuid": "^9.0.1"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
   }
 }
