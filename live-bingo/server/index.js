@@ -9,7 +9,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, { 
   cors: { 
-    origin: "*", 
+    origin: "https://live-bingo.onrender.com/", 
     methods: ["GET", "POST"]
   } 
 });
@@ -26,7 +26,7 @@ app.get("*", (req, res) => {
 // Register socket events
 registerSocketHandlers(io);
 
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3002;
 server.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
