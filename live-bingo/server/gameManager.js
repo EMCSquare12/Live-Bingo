@@ -63,14 +63,22 @@ class Game {
     return player;
   }
 
-  removePlayer(socketId) {
+// Inside Class Game
+removePlayer(socketId) {
     const idx = this.players.findIndex(p => p.socketId === socketId);
     if (idx !== -1) {
       const removed = this.players.splice(idx, 1)[0];
+      
+      // FIX: Clean up timeout map
+      if (this.disconnectTimeouts.has(socketId)) {
+        clearTimeout(this.disconnectTimeouts.get(socketId));
+        this.disconnectTimeouts.delete(socketId);
+      }
+      
       return removed;
     }
     return null;
-  }
+}
 
   reconnectPlayer(persistentId, newSocketId) {
     const player = this.players.find(p => p.id === persistentId);
@@ -163,10 +171,10 @@ class Game {
     });
   }
 
-  getPublicState() {
+// Inside Class Game
+getPublicState() {
     return {
         hostName: this.hostName,
-        hostId: this.hostId, // Needed for session validation
         cardNumber: this.cardNumber,
         cardWinningPattern: this.cardWinningPattern,
         numberCalled: this.numberCalled,
@@ -213,14 +221,23 @@ function reconnectPlayer(io, socket, roomCode, persistentId, isHost) {
     
     if (isHost) {
         if (game.reconnectHost(persistentId, socket.id)) {
-            socket.emit("session-reconnected", { ...game.getPublicState(), roomCode });
+            // Send hostId explicitly back to the host
+            socket.emit("session-reconnected", { 
+                ...game.getPublicState(), 
+                roomCode, 
+                hostId: game.hostId // Only send to authenticated host
+            });
         } else {
             socket.emit("reconnect-failed", "Invalid Host Session");
         }
     } else {
         const player = game.reconnectPlayer(persistentId, socket.id);
         if (player) {
-            socket.emit("session-reconnected", { ...game.getPublicState(), roomCode });
+            // Do NOT send hostId to players
+            socket.emit("session-reconnected", { 
+                ...game.getPublicState(), 
+                roomCode 
+            });
             io.to(roomCode).emit("players", game.players);
         } else {
             socket.emit("reconnect-failed", "Player not found");

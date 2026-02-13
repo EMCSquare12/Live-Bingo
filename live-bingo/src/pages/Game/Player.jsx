@@ -24,14 +24,11 @@ function Player() {
   const [localMarkedNumbers, setLocalMarkedNumbers] = useState(player.markedNumbers || []);
 
   // Sync strictly when the GAME resets or player initially loads
-  useEffect(() => {
-    if (player.markedNumbers && player.markedNumbers.length === 0) {
-        setLocalMarkedNumbers([]);
-    } else if (player.markedNumbers && localMarkedNumbers.length === 0 && player.markedNumbers.length > 0) {
-        // Initial load sync
-        setLocalMarkedNumbers(player.markedNumbers);
-    }
-  }, [player.markedNumbers]); // Only depend on player.markedNumbers
+useEffect(() => {
+  if (player.markedNumbers) {
+    setLocalMarkedNumbers(player.markedNumbers);
+  }
+}, [player.markedNumbers]);
 
   const cards = player.cards ?? [];
 

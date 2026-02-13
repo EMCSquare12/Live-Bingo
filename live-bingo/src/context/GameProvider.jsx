@@ -3,6 +3,12 @@ import { useState, useMemo, useEffect, useCallback } from "react";
 import GameContext from "./GameContext";
 import { socket } from "../utils/socket";
 
+
+ // --- Game State ---
+  const initialBingoNumbers = {
+    array: Array.from({ length: 75 }, (_, i) => i + 1),
+    randomNumber: null,
+  };
 const GameProvider = ({ children }) => {
   // --- UI State ---
   const [roomCode, setRoomCode] = useState("");
@@ -30,11 +36,7 @@ const GameProvider = ({ children }) => {
     isTransparent: false,
   });
 
-  // --- Game State ---
-  const initialBingoNumbers = {
-    array: Array.from({ length: 75 }, (_, i) => i + 1),
-    randomNumber: null,
-  };
+ 
   
   const [bingoNumbers, setBingoNumbers] = useState(initialBingoNumbers);
   const [player, setPlayer] = useState({ id: "", name: "", cards: [], result: [] });

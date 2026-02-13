@@ -1,18 +1,18 @@
-import express from "express";
-import http from "http";
-import { Server } from "socket.io";
-import cors from "cors";
-import registerSocketHandlers from "./socket.js";
-import path from "path";
-import { fileURLToPath } from "url";
-
-// Define __dirname for ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const express = require("express");
+const http = require("http");
+const { Server } = require("socket.io");
+const cors = require("cors");
+const registerSocketHandlers = require("./socket.js");
+const path = require("path");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
+const io = new Server(server, { 
+  cors: { 
+    origin: "*", // Recommendation: Restrict this to your client URL in production
+    methods: ["GET", "POST"]
+  } 
+});
 
 app.use(cors());
 
